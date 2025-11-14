@@ -2,13 +2,18 @@ import axios from 'axios'
 
 // 開発環境用のモックデータ生成
 const generateMockData = () => {
-  const categories = ['食品', '飲料', '日用品']
+  const categories = ['飲料', 'お菓子・おつまみ', '生鮮食品', '冷蔵・冷凍', '調味料', 'パン・シリアル', '日用品']
   const products = [
     { name: '牛乳', category: '飲料', basePrice: 250 },
-    { name: '卵', category: '食品', basePrice: 200 },
-    { name: '食用油', category: '食品', basePrice: 350 },
-    { name: '食パン', category: '食品', basePrice: 180 },
-    { name: 'トイレットペーパー', category: '日用品', basePrice: 500 }
+    { name: '卵', category: '生鮮食品', basePrice: 200 },
+    { name: '食用油', category: '調味料', basePrice: 350 },
+    { name: '食パン', category: 'パン・シリアル', basePrice: 180 },
+    { name: 'トイレットペーパー', category: '日用品', basePrice: 500 },
+    { name: 'コーラ', category: '飲料', basePrice: 150 },
+    { name: 'ポテトチップス', category: 'お菓子・おつまみ', basePrice: 120 },
+    { name: '冷凍餃子', category: '冷蔵・冷凍', basePrice: 280 },
+    { name: '醤油', category: '調味料', basePrice: 200 },
+    { name: 'チョコレート', category: 'お菓子・おつまみ', basePrice: 180 }
   ]
   
   return products.map((product, index) => ({

@@ -3,7 +3,7 @@
     <div class="header-content">
       <router-link to="/top" class="logo">
         <span class="logo-icon">💰</span>
-        <span class="logo-text">買い時ナビ</span>
+        <span class="logo-text">買いどきナビ</span>
       </router-link>
       
       <nav class="nav">

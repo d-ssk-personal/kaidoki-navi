@@ -1,60 +1,95 @@
 <template>
   <div class="top-page">
-    <!-- ヒーローセクション -->
-    <section class="hero">
-      <div class="hero-content">
-        <h1 class="hero-title">
-          価格変動を見逃さない<br>
-          賢い買い物で家計を守る
-        </h1>
-        <p class="hero-description">
-          2025年問題で物価高騰が続く今、買い時ナビが<br>
-          商品の値上げ・値下げをリアルタイムでお知らせします
-        </p>
-        <div class="hero-actions">
-          <button class="btn btn-primary" @click="scrollToProducts">
-            商品を見る
-          </button>
-          <button class="btn btn-secondary">
-            LINE通知を受け取る
-          </button>
+    <!-- 買いどきナビとは?セクション -->
+    <section class="about-section">
+      <button class="about-link" @click="showAboutModal = true">
+        ❓ 買いどきナビとは?
+      </button>
+    </section>
+
+    <!-- CTAボタン -->
+    <section class="cta-buttons">
+      <button class="btn btn-primary" @click="scrollToProducts">
+        📊 商品を見る
+      </button>
+      <button class="btn btn-secondary">
+        💚 LINE通知を受け取る
+      </button>
+    </section>
+
+    <!-- 検索フォーム -->
+    <section class="search-section">
+      <div class="search-container">
+        <h2 class="search-title">商品を検索</h2>
+        
+        <div class="search-form">
+          <!-- フリーワード検索 -->
+          <div class="search-input-wrapper">
+            <input 
+              type="text" 
+              v-model="searchQuery"
+              placeholder="商品名で検索（例: 牛乳、卵、パンなど）"
+              class="search-input"
+              @keyup.enter="performSearch"
+            />
+            <button class="search-button" @click="performSearch">
+              🔍 検索
+            </button>
+          </div>
+
+          <!-- カテゴリ検索 -->
+          <div class="category-filter">
+            <label class="filter-label">カテゴリで絞り込み:</label>
+            <div class="category-chips">
+              <button 
+                v-for="category in categories" 
+                :key="category"
+                :class="['category-chip', { active: selectedCategory === category }]"
+                @click="selectCategory(category)"
+              >
+                {{ category }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- 特徴セクション -->
-    <section class="features">
-      <h2 class="section-title">3つの特徴</h2>
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3 class="feature-title">価格推移の可視化</h3>
-          <p class="feature-description">
-            過去30日〜180日の価格変動をグラフで確認。買い時を逃しません。
-          </p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🤖</div>
-          <h3 class="feature-title">AI要約</h3>
-          <p class="feature-description">
-            最安値情報や値下げ傾向をAIが分析。節約のヒントをお届けします。
-          </p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🔔</div>
-          <h3 class="feature-title">リアルタイム通知</h3>
-          <p class="feature-description">
-            値上げ・値下げを即座にお知らせ。LINEやWebプッシュで受け取れます。
-          </p>
-        </div>
+    <!-- 検索結果 -->
+    <section v-if="hasSearched" class="search-results">
+      <div class="results-header">
+        <h2 class="section-title">
+          検索結果
+          <span class="result-count">（{{ filteredProducts.length }}件）</span>
+        </h2>
+        <button class="clear-search" @click="clearSearch">
+          ✕ 検索をクリア
+        </button>
+      </div>
+      
+      <div v-if="loading" class="loading">
+        <p>検索中...</p>
+      </div>
+      
+      <div v-else-if="filteredProducts.length === 0" class="no-results">
+        <p>該当する商品が見つかりませんでした</p>
+        <p class="no-results-hint">別のキーワードやカテゴリで検索してみてください</p>
+      </div>
+      
+      <div v-else class="products-grid grid grid-2">
+        <ProductCard 
+          v-for="product in filteredProducts" 
+          :key="product.id" 
+          :product="product" 
+        />
       </div>
     </section>
 
-    <!-- 商品一覧セクション -->
+    <!-- 人気商品の価格推移 -->
     <section class="products" ref="productsSection">
       <h2 class="section-title">人気商品の価格推移</h2>
       
-      <div v-if="loading" class="loading">
+      <div v-if="loading && !hasSearched" class="loading">
         <p>読み込み中...</p>
       </div>
       
@@ -83,6 +118,68 @@
         </button>
       </div>
     </section>
+
+    <!-- 買いどきナビとは?モーダル -->
+    <div v-if="showAboutModal" class="modal-overlay" @click="showAboutModal = false">
+      <div class="modal-content" @click.stop>
+        <button class="modal-close" @click="showAboutModal = false">✕</button>
+        
+        <h2 class="modal-title">買いどきナビとは?</h2>
+        
+        <div class="modal-body">
+          <div class="modal-hero">
+            <p class="modal-description">
+              価格変動を見逃さない<br>
+              賢い買い物で家計を守る
+            </p>
+            <p class="modal-subdescription">
+              2025年問題で物価高騰が続く今、買いどきナビが<br>
+              商品の値上げ・値下げをリアルタイムでお知らせします
+            </p>
+          </div>
+
+          <h3 class="modal-section-title">3つの特徴</h3>
+          
+          <div class="features-list">
+            <div class="feature-item">
+              <div class="feature-icon">📊</div>
+              <div class="feature-content">
+                <h4 class="feature-title">価格推移の可視化</h4>
+                <p class="feature-description">
+                  過去30日〜180日の価格変動をグラフで確認。買い時を逃しません。
+                </p>
+              </div>
+            </div>
+
+            <div class="feature-item">
+              <div class="feature-icon">🤖</div>
+              <div class="feature-content">
+                <h4 class="feature-title">AI要約</h4>
+                <p class="feature-description">
+                  最安値情報や値下げ傾向をAIが分析。節約のヒントをお届けします。
+                </p>
+              </div>
+            </div>
+
+            <div class="feature-item">
+              <div class="feature-icon">🔔</div>
+              <div class="feature-content">
+                <h4 class="feature-title">リアルタイム通知</h4>
+                <p class="feature-description">
+                  値上げ・値下げを即座にお知らせ。LINEやWebプッシュで受け取れます。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn btn-primary" @click="showAboutModal = false">
+              閉じる
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -100,7 +197,42 @@ export default {
     return {
       products: [],
       loading: true,
-      error: null
+      error: null,
+      showAboutModal: false,
+      searchQuery: '',
+      selectedCategory: '',
+      hasSearched: false,
+      categories: [
+        '飲料',
+        'お菓子・おつまみ',
+        '生鮮食品',
+        '冷蔵・冷凍',
+        '調味料',
+        'パン・シリアル',
+        '日用品',
+        'その他'
+      ]
+    }
+  },
+  computed: {
+    filteredProducts() {
+      let results = [...this.products]
+      
+      // カテゴリフィルター
+      if (this.selectedCategory) {
+        results = results.filter(p => p.category === this.selectedCategory)
+      }
+      
+      // キーワード検索
+      if (this.searchQuery.trim()) {
+        const query = this.searchQuery.toLowerCase()
+        results = results.filter(p => 
+          p.name.toLowerCase().includes(query) ||
+          p.category.toLowerCase().includes(query)
+        )
+      }
+      
+      return results
     }
   },
   async mounted() {
@@ -123,6 +255,29 @@ export default {
         this.loading = false
       }
     },
+    performSearch() {
+      this.hasSearched = true
+      // スクロールして検索結果を表示
+      this.$nextTick(() => {
+        const resultsSection = document.querySelector('.search-results')
+        if (resultsSection) {
+          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      })
+    },
+    selectCategory(category) {
+      if (this.selectedCategory === category) {
+        this.selectedCategory = ''
+      } else {
+        this.selectedCategory = category
+      }
+      this.performSearch()
+    },
+    clearSearch() {
+      this.searchQuery = ''
+      this.selectedCategory = ''
+      this.hasSearched = false
+    },
     scrollToProducts() {
       this.$refs.productsSection?.scrollIntoView({ behavior: 'smooth' })
     }
@@ -135,44 +290,208 @@ export default {
   padding-bottom: 60px;
 }
 
-/* ヒーローセクション */
-.hero {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 80px 40px;
+/* 買いどきナビとは?セクション */
+.about-section {
   text-align: center;
-  color: white;
-  margin-bottom: 60px;
+  margin-bottom: 24px;
 }
 
-.hero-title {
-  font-size: 42px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  line-height: 1.3;
-}
-
-.hero-description {
+.about-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: white;
+  border: 2px solid var(--primary-color);
+  border-radius: 24px;
+  color: var(--primary-color);
   font-size: 18px;
-  margin-bottom: 40px;
-  opacity: 0.95;
-  line-height: 1.6;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.hero-actions {
+.about-link:hover {
+  background-color: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* CTAボタン */
+.cta-buttons {
   display: flex;
   gap: 16px;
   justify-content: center;
   flex-wrap: wrap;
+  margin-bottom: 48px;
 }
 
-.btn-large {
+/* 検索セクション */
+.search-section {
+  margin-bottom: 48px;
+}
+
+.search-container {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 40px;
+  color: white;
+}
+
+.search-title {
+  font-size: 28px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.search-input-wrapper {
+  display: flex;
+  gap: 12px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 16px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  outline: none;
+}
+
+.search-button {
   padding: 16px 32px;
-  font-size: 18px;
+  background-color: white;
+  color: var(--primary-color);
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
 }
 
-/* 特徴セクション */
-.features {
+.search-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.category-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filter-label {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-chip {
+  padding: 8px 16px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.category-chip:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.category-chip.active {
+  background-color: white;
+  color: var(--primary-color);
+  border-color: white;
+}
+
+/* 検索結果 */
+.search-results {
+  margin-bottom: 48px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.result-count {
+  font-size: 18px;
+  color: var(--text-secondary);
+  font-weight: normal;
+}
+
+.clear-search {
+  padding: 8px 16px;
+  background-color: transparent;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clear-search:hover {
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+.no-results {
+  text-align: center;
+  padding: 60px 20px;
+  background-color: white;
+  border-radius: 12px;
+}
+
+.no-results p {
+  font-size: 18px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.no-results-hint {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* 商品セクション */
+.products {
   margin-bottom: 60px;
 }
 
@@ -182,42 +501,6 @@ export default {
   text-align: center;
   margin-bottom: 40px;
   color: var(--text-primary);
-}
-
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 30px;
-}
-
-.feature-card {
-  background-color: white;
-  border-radius: 12px;
-  padding: 30px;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.feature-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
-.feature-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: var(--text-primary);
-}
-
-.feature-description {
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
-/* 商品セクション */
-.products {
-  margin-bottom: 60px;
 }
 
 .products-grid {
@@ -257,25 +540,211 @@ export default {
   opacity: 0.95;
 }
 
+.btn-large {
+  padding: 16px 32px;
+  font-size: 18px;
+}
+
+/* モーダル */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 16px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+}
+
+.modal-title {
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+  padding: 32px 32px 16px;
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 0 32px 32px;
+}
+
+.modal-hero {
+  text-align: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+  margin-bottom: 32px;
+}
+
+.modal-description {
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+
+.modal-subdescription {
+  font-size: 16px;
+  opacity: 0.95;
+  line-height: 1.6;
+}
+
+.modal-section-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 24px;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.feature-item {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background-color: var(--bg-light);
+  border-radius: 12px;
+}
+
+.feature-icon {
+  font-size: 40px;
+  flex-shrink: 0;
+}
+
+.feature-content {
+  flex: 1;
+}
+
+.feature-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.feature-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.modal-actions {
+  text-align: center;
+}
+
 @media (max-width: 768px) {
-  .hero {
-    padding: 60px 20px;
+  .search-container {
+    padding: 24px;
   }
   
-  .hero-title {
-    font-size: 32px;
+  .search-title {
+    font-size: 24px;
   }
   
-  .hero-description {
-    font-size: 16px;
-  }
-  
-  .hero-actions {
+  .search-input-wrapper {
     flex-direction: column;
   }
   
-  .section-title {
+  .search-button {
+    width: 100%;
+  }
+  
+  .cta-buttons {
+    flex-direction: column;
+  }
+  
+  .cta {
+    padding: 40px 20px;
+  }
+  
+  .cta-title {
     font-size: 28px;
+  }
+  
+  .cta-description {
+    font-size: 16px;
+  }
+  
+  .section-title {
+    font-size: 24px;
+  }
+  
+  .modal-content {
+    max-height: 95vh;
+  }
+  
+  .modal-title {
+    font-size: 24px;
+    padding: 24px 16px 12px;
+  }
+  
+  .modal-body {
+    padding: 0 16px 24px;
+  }
+  
+  .modal-description {
+    font-size: 20px;
+  }
+  
+  .modal-subdescription {
+    font-size: 14px;
   }
 }
 </style>

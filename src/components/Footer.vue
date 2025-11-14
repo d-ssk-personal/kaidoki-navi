@@ -2,7 +2,7 @@
   <footer class="footer">
     <div class="footer-content">
       <div class="footer-section">
-        <h3 class="footer-title">買い時ナビ</h3>
+        <h3 class="footer-title">買いどきナビ</h3>
         <p class="footer-description">
           価格変動を見逃さない。<br>
           賢い買い物で家計を守る。
