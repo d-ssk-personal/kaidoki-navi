@@ -85,6 +85,9 @@
       </div>
     </section>
 
+    <!-- 家計・物価コラム -->
+    <ArticleList :limit="8" />
+
     <!-- 人気商品の価格推移 -->
     <section class="products" ref="productsSection">
       <h2 class="section-title">人気商品の価格推移</h2>
@@ -185,13 +188,15 @@
 
 <script>
 import ProductCard from '@/components/ProductCard.vue'
+import ArticleList from '@/components/ArticleList.vue'
 import api from '@/services/api'
 import { useMainStore } from '@/store'
 
 export default {
   name: 'TopPage',
   components: {
-    ProductCard
+    ProductCard,
+    ArticleList
   },
   data() {
     return {
