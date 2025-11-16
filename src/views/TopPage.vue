@@ -85,29 +85,29 @@
       </div>
     </section>
 
-    <!-- 家計・物価コラム -->
-    <ArticleList :limit="8" />
-
     <!-- 人気商品の価格推移 -->
     <section class="products" ref="productsSection">
       <h2 class="section-title">人気商品の価格推移</h2>
-      
+
       <div v-if="loading && !hasSearched" class="loading">
         <p>読み込み中...</p>
       </div>
-      
+
       <div v-else-if="error" class="error">
         <p>{{ error }}</p>
       </div>
-      
+
       <div v-else class="products-grid grid grid-2">
-        <ProductCard 
-          v-for="product in products" 
-          :key="product.id" 
-          :product="product" 
+        <ProductCard
+          v-for="product in products"
+          :key="product.id"
+          :product="product"
         />
       </div>
     </section>
+
+    <!-- 家計・物価コラム -->
+    <ArticleList :limit="8" />
 
     <!-- CTAセクション -->
     <section class="cta">
