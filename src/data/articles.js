@@ -17,7 +17,8 @@ export const articles = [
     ],
     publishedAt: '2025-01-05T10:00:00Z',
     category: '値上げ情報',
-    tags: ['値上げ', '小麦製品', '乳製品']
+    tags: ['値上げ', '小麦製品', '乳製品'],
+    status: 'published'
   },
   {
     id: 2,
@@ -35,7 +36,8 @@ export const articles = [
     ],
     publishedAt: '2025-01-03T14:30:00Z',
     category: '特売情報',
-    tags: ['特売', '節約', 'セール']
+    tags: ['特売', '節約', 'セール'],
+    status: 'published'
   },
   {
     id: 3,
@@ -54,7 +56,8 @@ export const articles = [
     ],
     publishedAt: '2025-01-02T09:15:00Z',
     category: '値下げ速報',
-    tags: ['値下げ', '調味料', 'お得']
+    tags: ['値下げ', '調味料', 'お得'],
+    status: 'published'
   },
   {
     id: 4,
@@ -71,7 +74,8 @@ export const articles = [
     ],
     publishedAt: '2024-12-28T11:00:00Z',
     category: '活用術',
-    tags: ['活用術', '家計簿', '節約']
+    tags: ['活用術', '家計簿', '節約'],
+    status: 'draft'
   },
   {
     id: 5,
@@ -96,7 +100,8 @@ export const articles = [
     ],
     publishedAt: '2024-12-25T08:00:00Z',
     category: '節約術',
-    tags: ['節約', 'テクニック', '食費']
+    tags: ['節約', 'テクニック', '食費'],
+    status: 'published'
   },
   {
     id: 6,
@@ -122,7 +127,8 @@ export const articles = [
     ],
     publishedAt: '2024-12-20T15:00:00Z',
     category: '市場分析',
-    tags: ['市場分析', '値上げ', '2024年']
+    tags: ['市場分析', '値上げ', '2024年'],
+    status: 'published'
   },
   {
     id: 7,
@@ -139,7 +145,8 @@ export const articles = [
     ],
     publishedAt: '2024-12-15T12:00:00Z',
     category: 'アプリ更新',
-    tags: ['LINE', '通知', '機能更新']
+    tags: ['LINE', '通知', '機能更新'],
+    status: 'draft'
   },
   {
     id: 8,
@@ -157,7 +164,8 @@ export const articles = [
     ],
     publishedAt: '2024-12-10T10:30:00Z',
     category: '買い物術',
-    tags: ['スーパー', '値下げ', 'タイミング']
+    tags: ['スーパー', '値下げ', 'タイミング'],
+    status: 'published'
   }
 ]
 

@@ -13,7 +13,7 @@ export const useArticlesStore = defineStore('articles', {
       return state.articles.find(article => article.id === parseInt(id))
     },
 
-    searchArticles: (state) => (query, category, tag) => {
+    searchArticles: (state) => (query, category, tag, status) => {
       let results = [...state.articles]
 
       // カテゴリフィルター
@@ -26,6 +26,11 @@ export const useArticlesStore = defineStore('articles', {
         results = results.filter(article =>
           article.tags && article.tags.includes(tag)
         )
+      }
+
+      // ステータスフィルター
+      if (status) {
+        results = results.filter(article => article.status === status)
       }
 
       // キーワード検索
@@ -72,6 +77,22 @@ export const useArticlesStore = defineStore('articles', {
         return true
       }
       return false
+    },
+
+    bulkDeleteArticles(ids) {
+      const idsToDelete = ids.map(id => parseInt(id))
+      this.articles = this.articles.filter(article => !idsToDelete.includes(article.id))
+      return true
+    },
+
+    bulkUpdateStatus(ids, status) {
+      const idsToUpdate = ids.map(id => parseInt(id))
+      this.articles.forEach(article => {
+        if (idsToUpdate.includes(article.id)) {
+          article.status = status
+        }
+      })
+      return true
     }
   }
 })

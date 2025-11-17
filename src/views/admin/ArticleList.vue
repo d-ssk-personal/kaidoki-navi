@@ -2,10 +2,13 @@
   <div class="admin-article-list">
     <div class="admin-header">
       <div class="header-left">
-        <router-link to="/admin" class="back-link">
-          ← 管理画面に戻る
-        </router-link>
         <h1 class="page-title">コラム管理</h1>
+        <!-- パンくずリスト -->
+        <nav class="breadcrumb">
+          <router-link to="/admin">管理画面</router-link>
+          <span class="separator">›</span>
+          <span class="current">コラム管理</span>
+        </nav>
       </div>
       <button @click="handleLogout" class="logout-button">
         ログアウト
@@ -30,6 +33,19 @@
 
         <div class="filter-row">
           <div class="filter-group">
+            <label class="filter-label">ステータス:</label>
+            <select
+              v-model="filterStatus"
+              class="filter-select"
+              @change="performSearch"
+            >
+              <option value="">すべて</option>
+              <option value="published">公開</option>
+              <option value="draft">非公開</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
             <label class="filter-label">日付:</label>
             <input
               v-model="filterDate"
@@ -50,9 +66,23 @@
             />
           </div>
         </div>
+
+        <!-- 一括操作 -->
+        <div v-if="selectedIds.length > 0" class="bulk-actions">
+          <span class="selected-count">{{ selectedIds.length }}件選択中</span>
+          <button @click="bulkPublish" class="btn-bulk btn-publish">
+            一括公開
+          </button>
+          <button @click="bulkUnpublish" class="btn-bulk btn-unpublish">
+            一括非公開
+          </button>
+          <button @click="confirmBulkDelete" class="btn-bulk btn-delete">
+            一括削除
+          </button>
+        </div>
       </div>
 
-      <!-- 記事一覧 -->
+      <!-- 記事一覧（マトリックス） -->
       <div class="articles-section">
         <div class="section-header">
           <h2 class="section-title">
@@ -69,51 +99,86 @@
           <p>記事が見つかりませんでした</p>
         </div>
 
-        <div v-else class="article-cards">
-          <div
-            v-for="article in filteredArticles"
-            :key="article.id"
-            class="article-card"
-          >
-            <div class="card-header">
-              <h3 class="article-title-preview">
-                {{ truncateText(article.title, 40) }}
-              </h3>
-              <span class="article-date">
-                {{ formatDate(article.publishedAt) }}
-              </span>
-            </div>
-
-            <div class="card-body">
-              <p class="article-content-preview">
-                {{ truncateText(article.content, 100) }}
-              </p>
-              <div v-if="article.tags && article.tags.length > 0" class="article-tags">
-                <span
-                  v-for="(tag, index) in article.tags"
-                  :key="index"
-                  class="tag"
-                >
-                  {{ tag }}
-                </span>
-              </div>
-            </div>
-
-            <div class="card-footer">
-              <button
-                @click="goToEditPage(article.id)"
-                class="btn btn-edit"
+        <div v-else class="table-container">
+          <table class="articles-table">
+            <thead>
+              <tr>
+                <th class="col-checkbox">
+                  <input
+                    type="checkbox"
+                    :checked="isAllSelected"
+                    @change="toggleSelectAll"
+                  />
+                </th>
+                <th class="col-status">ステータス</th>
+                <th class="col-title">タイトル</th>
+                <th class="col-content">本文</th>
+                <th class="col-tags">タグ</th>
+                <th class="col-date">日付</th>
+                <th class="col-actions">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="article in filteredArticles"
+                :key="article.id"
+                :class="{ selected: selectedIds.includes(article.id) }"
               >
-                ✏️ 編集
-              </button>
-              <button
-                @click="confirmDelete(article)"
-                class="btn btn-delete"
-              >
-                🗑️ 削除
-              </button>
-            </div>
-          </div>
+                <td class="col-checkbox">
+                  <input
+                    type="checkbox"
+                    :checked="selectedIds.includes(article.id)"
+                    @change="toggleSelect(article.id)"
+                  />
+                </td>
+                <td class="col-status">
+                  <span :class="['status-badge', article.status]">
+                    {{ article.status === 'published' ? '公開' : '非公開' }}
+                  </span>
+                </td>
+                <td class="col-title">
+                  {{ truncateText(article.title, 40) }}
+                </td>
+                <td class="col-content">
+                  {{ truncateText(article.content, 60) }}
+                </td>
+                <td class="col-tags">
+                  <div v-if="article.tags && article.tags.length > 0" class="tags">
+                    <span
+                      v-for="(tag, index) in article.tags.slice(0, 2)"
+                      :key="index"
+                      class="tag"
+                    >
+                      {{ tag }}
+                    </span>
+                    <span v-if="article.tags.length > 2" class="tag-more">
+                      +{{ article.tags.length - 2 }}
+                    </span>
+                  </div>
+                  <span v-else class="no-tags">-</span>
+                </td>
+                <td class="col-date">
+                  {{ formatDate(article.publishedAt) }}
+                </td>
+                <td class="col-actions">
+                  <button
+                    @click="goToEditPage(article.id)"
+                    class="btn-icon btn-edit"
+                    title="編集"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    @click="confirmDelete(article)"
+                    class="btn-icon btn-delete"
+                    title="削除"
+                  >
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -131,7 +196,9 @@ export default {
       searchQuery: '',
       filterDate: '',
       filterTag: '',
-      loading: false
+      filterStatus: '',
+      loading: false,
+      selectedIds: []
     }
   },
   setup() {
@@ -144,7 +211,8 @@ export default {
       let articles = this.articlesStore.searchArticles(
         this.searchQuery,
         '',
-        this.filterTag
+        this.filterTag,
+        this.filterStatus
       )
 
       // 日付フィルター
@@ -161,6 +229,10 @@ export default {
       }
 
       return articles
+    },
+    isAllSelected() {
+      return this.filteredArticles.length > 0 &&
+        this.selectedIds.length === this.filteredArticles.length
     }
   },
   methods: {
@@ -194,8 +266,45 @@ export default {
       const success = this.articlesStore.deleteArticle(id)
       if (success) {
         alert('記事を削除しました')
+        this.selectedIds = this.selectedIds.filter(selectedId => selectedId !== id)
       } else {
         alert('記事の削除に失敗しました')
+      }
+    },
+    toggleSelect(id) {
+      const index = this.selectedIds.indexOf(id)
+      if (index > -1) {
+        this.selectedIds.splice(index, 1)
+      } else {
+        this.selectedIds.push(id)
+      }
+    },
+    toggleSelectAll() {
+      if (this.isAllSelected) {
+        this.selectedIds = []
+      } else {
+        this.selectedIds = this.filteredArticles.map(article => article.id)
+      }
+    },
+    bulkPublish() {
+      if (confirm(`選択した${this.selectedIds.length}件の記事を公開しますか？`)) {
+        this.articlesStore.bulkUpdateStatus(this.selectedIds, 'published')
+        alert('記事を公開しました')
+        this.selectedIds = []
+      }
+    },
+    bulkUnpublish() {
+      if (confirm(`選択した${this.selectedIds.length}件の記事を非公開にしますか？`)) {
+        this.articlesStore.bulkUpdateStatus(this.selectedIds, 'draft')
+        alert('記事を非公開にしました')
+        this.selectedIds = []
+      }
+    },
+    confirmBulkDelete() {
+      if (confirm(`選択した${this.selectedIds.length}件の記事を削除しますか？\nこの操作は取り消せません。`)) {
+        this.articlesStore.bulkDeleteArticles(this.selectedIds)
+        alert('記事を削除しました')
+        this.selectedIds = []
       }
     },
     handleLogout() {
@@ -238,21 +347,40 @@ export default {
   gap: 8px;
 }
 
-.back-link {
-  color: var(--primary-color);
-  font-size: 14px;
-  text-decoration: none;
-  transition: opacity 0.3s ease;
-}
-
-.back-link:hover {
-  opacity: 0.7;
-}
-
 .page-title {
   font-size: 28px;
   font-weight: bold;
   color: var(--text-primary);
+  margin: 0;
+}
+
+/* パンくずリスト */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.breadcrumb a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: opacity 0.3s ease;
+}
+
+.breadcrumb a:hover {
+  opacity: 0.7;
+  text-decoration: underline;
+}
+
+.breadcrumb .separator {
+  color: var(--text-secondary);
+}
+
+.breadcrumb .current {
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .logout-button {
@@ -274,7 +402,7 @@ export default {
 }
 
 .page-content {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 40px 32px;
 }
@@ -346,7 +474,8 @@ export default {
   white-space: nowrap;
 }
 
-.filter-input {
+.filter-input,
+.filter-select {
   padding: 8px 12px;
   border: 2px solid var(--border-color);
   border-radius: 8px;
@@ -355,8 +484,70 @@ export default {
   transition: border-color 0.3s ease;
 }
 
-.filter-input:focus {
+.filter-input:focus,
+.filter-select:focus {
   border-color: var(--primary-color);
+}
+
+.filter-select {
+  min-width: 120px;
+}
+
+/* 一括操作 */
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 2px solid var(--border-color);
+}
+
+.selected-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-right: auto;
+}
+
+.btn-bulk {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-bulk.btn-publish {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.btn-bulk.btn-publish:hover {
+  background-color: #059669;
+  transform: translateY(-2px);
+}
+
+.btn-bulk.btn-unpublish {
+  background-color: #6b7280;
+  color: white;
+}
+
+.btn-bulk.btn-unpublish:hover {
+  background-color: #4b5563;
+  transform: translateY(-2px);
+}
+
+.btn-bulk.btn-delete {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.btn-bulk.btn-delete:hover {
+  background-color: #dc2626;
+  transform: translateY(-2px);
 }
 
 /* 記事一覧セクション */
@@ -391,108 +582,146 @@ export default {
   font-size: 16px;
 }
 
-.article-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+/* テーブル */
+.table-container {
+  overflow-x: auto;
 }
 
-.article-card {
-  border: 2px solid var(--border-color);
-  border-radius: 12px;
-  padding: 20px;
-  transition: all 0.3s ease;
-}
-
-.article-card:hover {
-  border-color: var(--primary-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 12px;
-}
-
-.article-title-preview {
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--text-primary);
-  flex: 1;
-}
-
-.article-date {
+.articles-table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 14px;
-  color: var(--text-secondary);
+}
+
+.articles-table thead {
+  background-color: var(--bg-light);
+}
+
+.articles-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-color);
   white-space: nowrap;
 }
 
-.card-body {
-  margin-bottom: 16px;
+.articles-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
 }
 
-.article-content-preview {
-  font-size: 14px;
+.articles-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.articles-table tbody tr:hover {
+  background-color: var(--bg-light);
+}
+
+.articles-table tbody tr.selected {
+  background-color: #dbeafe;
+}
+
+.col-checkbox {
+  width: 40px;
+  text-align: center;
+}
+
+.col-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.col-status {
+  width: 100px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-badge.published {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.draft {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.col-title {
+  max-width: 300px;
+  font-weight: 500;
+}
+
+.col-content {
+  max-width: 350px;
   color: var(--text-secondary);
-  line-height: 1.6;
-  margin-bottom: 12px;
 }
 
-.article-tags {
+.col-tags {
+  max-width: 200px;
+}
+
+.tags {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .tag {
   display: inline-block;
-  padding: 4px 12px;
+  padding: 2px 8px;
   background-color: var(--bg-light);
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
-  border-radius: 12px;
-}
-
-.card-footer {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.btn {
-  padding: 8px 16px;
-  border: none;
   border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
+}
+
+.tag-more {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.no-tags {
+  color: var(--text-secondary);
+}
+
+.col-date {
+  width: 110px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.col-actions {
+  width: 100px;
+  text-align: center;
+}
+
+.btn-icon {
+  padding: 6px 10px;
+  background-color: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.btn-edit {
-  background-color: var(--primary-color);
-  color: white;
-}
-
-.btn-edit:hover {
-  background-color: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.btn-delete {
-  background-color: var(--danger-color);
-  color: white;
-}
-
-.btn-delete:hover {
-  background-color: #dc2626;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+.btn-icon:hover {
+  background-color: var(--bg-light);
+  transform: scale(1.1);
 }
 
 @media (max-width: 768px) {
@@ -524,21 +753,26 @@ export default {
     width: 100%;
   }
 
-  .filter-input {
+  .filter-input,
+  .filter-select {
     flex: 1;
   }
 
-  .card-header {
-    flex-direction: column;
-    gap: 8px;
+  .bulk-actions {
+    flex-wrap: wrap;
   }
 
-  .card-footer {
-    flex-direction: column;
-  }
-
-  .btn {
+  .selected-count {
     width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .table-container {
+    overflow-x: scroll;
+  }
+
+  .articles-table {
+    min-width: 800px;
   }
 }
 </style>

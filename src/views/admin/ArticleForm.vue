@@ -2,10 +2,15 @@
   <div class="admin-article-form">
     <div class="admin-header">
       <div class="header-left">
-        <router-link to="/admin/articles" class="back-link">
-          ← コラム一覧に戻る
-        </router-link>
         <h1 class="page-title">{{ isEditMode ? 'コラム編集' : 'コラム追加' }}</h1>
+        <!-- パンくずリスト -->
+        <nav class="breadcrumb">
+          <router-link to="/admin">管理画面</router-link>
+          <span class="separator">›</span>
+          <router-link to="/admin/articles">コラム管理</router-link>
+          <span class="separator">›</span>
+          <span class="current">{{ isEditMode ? 'コラム編集' : 'コラム追加' }}</span>
+        </nav>
       </div>
       <button @click="handleLogout" class="logout-button">
         ログアウト
@@ -58,6 +63,20 @@
             <option value="市場分析">市場分析</option>
             <option value="買い物術">買い物術</option>
             <option value="アプリ更新">アプリ更新</option>
+          </select>
+        </div>
+
+        <!-- 公開ステータス -->
+        <div class="form-group">
+          <label for="status" class="form-label required">公開ステータス</label>
+          <select
+            id="status"
+            v-model="form.status"
+            class="form-select"
+            required
+          >
+            <option value="published">公開</option>
+            <option value="draft">非公開</option>
           </select>
         </div>
 
@@ -138,6 +157,11 @@
           </div>
 
           <div class="confirm-item">
+            <span class="confirm-label">ステータス:</span>
+            <span class="confirm-value">{{ form.status === 'published' ? '公開' : '非公開' }}</span>
+          </div>
+
+          <div class="confirm-item">
             <span class="confirm-label">本文:</span>
             <span class="confirm-value text-preview">{{ form.content }}</span>
           </div>
@@ -186,6 +210,7 @@ export default {
         title: '',
         content: '',
         category: '',
+        status: 'draft',
         images: ['', '', ''],
         tags: ['', '', '']
       },
@@ -227,6 +252,7 @@ export default {
           title: this.form.title,
           content: this.form.content,
           category: this.form.category,
+          status: this.form.status,
           images: this.filteredImages,
           tags: this.filteredTags
         }
@@ -264,6 +290,7 @@ export default {
           this.form.title = article.title
           this.form.content = article.content
           this.form.category = article.category
+          this.form.status = article.status || 'draft'
           this.form.images = [
             article.images?.[0] || '',
             article.images?.[1] || '',
@@ -329,21 +356,40 @@ export default {
   gap: 8px;
 }
 
-.back-link {
-  color: var(--primary-color);
-  font-size: 14px;
-  text-decoration: none;
-  transition: opacity 0.3s ease;
-}
-
-.back-link:hover {
-  opacity: 0.7;
-}
-
 .page-title {
   font-size: 28px;
   font-weight: bold;
   color: var(--text-primary);
+  margin: 0;
+}
+
+/* パンくずリスト */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.breadcrumb a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: opacity 0.3s ease;
+}
+
+.breadcrumb a:hover {
+  opacity: 0.7;
+  text-decoration: underline;
+}
+
+.breadcrumb .separator {
+  color: var(--text-secondary);
+}
+
+.breadcrumb .current {
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .logout-button {
