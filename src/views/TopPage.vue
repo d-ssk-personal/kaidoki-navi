@@ -5,33 +5,10 @@
       <button class="btn btn-primary" @click="scrollToProducts">
         📊 商品を見る
       </button>
-      <button class="btn btn-secondary">
-        💚 LINE通知を受け取る
-      </button>
     </section>
 
     <!-- メインコンテンツエリア -->
     <div class="main-container">
-      <!-- サイドバー -->
-      <aside class="sidebar">
-        <h2 class="sidebar-title">人気商品</h2>
-
-        <div v-for="categoryData in popularProductsByCategory" :key="categoryData.category" class="popular-category">
-          <h3 class="popular-category-title">{{ categoryData.category }}</h3>
-          <div class="popular-products-list">
-            <router-link
-              v-for="product in categoryData.products"
-              :key="product.id"
-              :to="`/item/${product.id}`"
-              class="popular-product-item"
-            >
-              <span class="popular-product-name">{{ product.name }}</span>
-              <span class="popular-product-price">¥{{ product.lowestPrice }}</span>
-            </router-link>
-          </div>
-        </div>
-      </aside>
-
       <!-- メインコンテンツ -->
       <main class="main-content">
         <!-- 検索フォーム -->
@@ -163,12 +140,29 @@
         <p class="cta-description">
           無料で価格変動をチェック。賢い買い物で家計を守りましょう。
         </p>
-        <button class="btn btn-primary btn-large">
-          LINE通知を受け取る
-          </button>
         </div>
       </section>
       </main>
+
+      <!-- サイドバー -->
+      <aside class="sidebar">
+        <h2 class="sidebar-title">人気商品</h2>
+
+        <div v-for="categoryData in popularProductsByCategory" :key="categoryData.category" class="popular-category">
+          <h3 class="popular-category-title">{{ categoryData.category }}</h3>
+          <div class="popular-products-list">
+            <router-link
+              v-for="product in categoryData.products"
+              :key="product.id"
+              :to="`/item/${product.id}`"
+              class="popular-product-item"
+            >
+              <span class="popular-product-name">{{ product.name }}</span>
+              <span class="popular-product-price">¥{{ product.lowestPrice }}</span>
+            </router-link>
+          </div>
+        </div>
+      </aside>
     </div>
   </div>
 </template>
@@ -696,7 +690,7 @@ export default {
 
 @media (max-width: 1024px) {
   .main-container {
-    flex-direction: column-reverse;
+    flex-direction: column;
   }
 
   .sidebar {
