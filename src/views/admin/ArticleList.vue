@@ -1,21 +1,19 @@
 <template>
   <div class="admin-article-list">
     <div class="admin-header">
-      <div class="header-left">
-        <h1 class="page-title">コラム管理</h1>
-        <!-- パンくずリスト -->
-        <nav class="breadcrumb">
-          <router-link to="/admin">管理画面</router-link>
-          <span class="separator">›</span>
-          <span class="current">コラム管理</span>
-        </nav>
-      </div>
+      <h1 class="page-title">コラム管理</h1>
       <button @click="handleLogout" class="logout-button">
         ログアウト
       </button>
     </div>
 
     <div class="page-content">
+      <!-- パンくずリスト -->
+      <nav class="breadcrumb">
+        <router-link to="/admin">管理画面</router-link>
+        <span class="separator">›</span>
+        <span class="current">コラム管理</span>
+      </nav>
       <!-- 検索・フィルターセクション -->
       <div class="search-section">
         <div class="search-row">
@@ -68,15 +66,29 @@
         </div>
 
         <!-- 一括操作 -->
-        <div v-if="selectedIds.length > 0" class="bulk-actions">
-          <span class="selected-count">{{ selectedIds.length }}件選択中</span>
-          <button @click="bulkPublish" class="btn-bulk btn-publish">
+        <div class="bulk-actions">
+          <span class="selected-count">
+            {{ selectedIds.length > 0 ? `${selectedIds.length}件選択中` : '選択なし' }}
+          </span>
+          <button
+            @click="bulkPublish"
+            class="btn-bulk btn-publish"
+            :disabled="selectedIds.length === 0"
+          >
             一括公開
           </button>
-          <button @click="bulkUnpublish" class="btn-bulk btn-unpublish">
+          <button
+            @click="bulkUnpublish"
+            class="btn-bulk btn-unpublish"
+            :disabled="selectedIds.length === 0"
+          >
             一括非公開
           </button>
-          <button @click="confirmBulkDelete" class="btn-bulk btn-delete">
+          <button
+            @click="confirmBulkDelete"
+            class="btn-bulk btn-delete"
+            :disabled="selectedIds.length === 0"
+          >
             一括削除
           </button>
         </div>
@@ -341,12 +353,6 @@ export default {
   gap: 16px;
 }
 
-.header-left {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .page-title {
   font-size: 28px;
   font-weight: bold;
@@ -361,6 +367,7 @@ export default {
   gap: 8px;
   font-size: 14px;
   color: var(--text-secondary);
+  margin-bottom: 24px;
 }
 
 .breadcrumb a {
@@ -520,12 +527,21 @@ export default {
   transition: all 0.3s ease;
 }
 
+.btn-bulk:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-bulk:disabled:hover {
+  transform: none;
+}
+
 .btn-bulk.btn-publish {
   background-color: var(--secondary-color);
   color: white;
 }
 
-.btn-bulk.btn-publish:hover {
+.btn-bulk.btn-publish:hover:not(:disabled) {
   background-color: #059669;
   transform: translateY(-2px);
 }
@@ -535,7 +551,7 @@ export default {
   color: white;
 }
 
-.btn-bulk.btn-unpublish:hover {
+.btn-bulk.btn-unpublish:hover:not(:disabled) {
   background-color: #4b5563;
   transform: translateY(-2px);
 }
@@ -545,7 +561,7 @@ export default {
   color: white;
 }
 
-.btn-bulk.btn-delete:hover {
+.btn-bulk.btn-delete:hover:not(:disabled) {
   background-color: #dc2626;
   transform: translateY(-2px);
 }
