@@ -1,10 +1,10 @@
 <template>
   <div id="app">
-    <Header />
-    <main class="main-content">
+    <Header v-if="!isAdminPage" />
+    <main class="main-content" :class="{ 'admin-content': isAdminPage }">
       <router-view />
     </main>
-    <Footer />
+    <Footer v-if="!isAdminPage" />
   </div>
 </template>
 
@@ -17,6 +17,11 @@ export default {
   components: {
     Header,
     Footer
+  },
+  computed: {
+    isAdminPage() {
+      return this.$route.path.startsWith('/admin')
+    }
   }
 }
 </script>
@@ -61,6 +66,11 @@ body {
   width: 100%;
   margin: 0 auto;
   padding: 20px;
+}
+
+.main-content.admin-content {
+  max-width: none;
+  padding: 0;
 }
 
 a {

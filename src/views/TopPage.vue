@@ -5,9 +5,6 @@
       <button class="btn btn-primary" @click="scrollToProducts">
         📊 商品を見る
       </button>
-      <button class="btn btn-secondary">
-        💚 LINE通知を受け取る
-      </button>
     </section>
 
     <!-- メインコンテンツエリア -->
@@ -143,9 +140,6 @@
         <p class="cta-description">
           無料で価格変動をチェック。賢い買い物で家計を守りましょう。
         </p>
-        <button class="btn btn-primary btn-large">
-          LINE通知を受け取る
-          </button>
         </div>
       </section>
       </main>
