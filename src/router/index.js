@@ -4,6 +4,10 @@ import ItemDetail from '@/views/ItemDetail.vue'
 import ArticleDetail from '@/views/ArticleDetail.vue'
 import Settings from '@/views/Settings.vue'
 import Legal from '@/views/Legal.vue'
+import AdminLogin from '@/views/admin/AdminLogin.vue'
+import AdminDashboard from '@/views/admin/AdminDashboard.vue'
+import AdminArticleList from '@/views/admin/ArticleList.vue'
+import ArticleForm from '@/views/admin/ArticleForm.vue'
 
 const routes = [
   {
@@ -34,6 +38,32 @@ const routes = [
     path: '/legal',
     name: 'Legal',
     component: Legal
+  },
+  // 管理画面
+  {
+    path: '/admin/login',
+    name: 'AdminLogin',
+    component: AdminLogin
+  },
+  {
+    path: '/admin',
+    name: 'AdminDashboard',
+    component: AdminDashboard
+  },
+  {
+    path: '/admin/articles',
+    name: 'AdminArticleList',
+    component: AdminArticleList
+  },
+  {
+    path: '/admin/articles/new',
+    name: 'AdminArticleNew',
+    component: ArticleForm
+  },
+  {
+    path: '/admin/articles/edit/:id',
+    name: 'AdminArticleEdit',
+    component: ArticleForm
   }
 ]
 
