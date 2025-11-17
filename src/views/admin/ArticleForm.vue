@@ -1,147 +1,196 @@
 <template>
-  <div class="article-form-page">
-    <!-- パンくずリスト -->
-    <nav class="breadcrumb">
-      <router-link to="/admin" class="breadcrumb-item">管理者トップ</router-link>
-      <span class="breadcrumb-separator">›</span>
-      <router-link to="/admin/articles" class="breadcrumb-item">コラム管理</router-link>
-      <span class="breadcrumb-separator">›</span>
-      <span class="breadcrumb-item active">{{ isEditMode ? '編集' : '新規作成' }}</span>
-    </nav>
-
-    <div class="page-header">
-      <h1 class="page-title">{{ isEditMode ? 'コラム編集' : 'コラム新規作成' }}</h1>
+  <div class="admin-article-form">
+    <div class="admin-header">
+      <div class="header-left">
+        <h1 class="page-title">{{ isEditMode ? 'コラム編集' : 'コラム追加' }}</h1>
+        <!-- パンくずリスト -->
+        <nav class="breadcrumb">
+          <router-link to="/admin">管理画面</router-link>
+          <span class="separator">›</span>
+          <router-link to="/admin/articles">コラム管理</router-link>
+          <span class="separator">›</span>
+          <span class="current">{{ isEditMode ? 'コラム編集' : 'コラム追加' }}</span>
+        </nav>
+      </div>
+      <button @click="handleLogout" class="logout-button">
+        ログアウト
+      </button>
     </div>
 
-    <div class="form-container">
-      <form @submit.prevent="handleSubmit">
+    <div class="page-content">
+      <form @submit.prevent="handleSubmit" class="article-form">
         <!-- タイトル -->
         <div class="form-group">
-          <label class="form-label required">タイトル</label>
+          <label for="title" class="form-label required">タイトル</label>
           <input
+            id="title"
             v-model="form.title"
             type="text"
             class="form-input"
-            placeholder="タイトルを入力"
+            placeholder="記事のタイトルを入力"
             required
           />
         </div>
 
         <!-- 本文 -->
         <div class="form-group">
-          <label class="form-label required">本文</label>
+          <label for="content" class="form-label required">本文</label>
           <textarea
+            id="content"
             v-model="form.content"
             class="form-textarea"
-            rows="12"
-            placeholder="本文を入力"
+            placeholder="記事の本文を入力"
+            rows="15"
             required
           ></textarea>
         </div>
 
-        <!-- 画像添付 -->
+        <!-- カテゴリ -->
         <div class="form-group">
-          <label class="form-label">画像添付（最大3枚）</label>
-          <div class="image-upload-area">
-            <div
-              v-for="(image, index) in form.images"
-              :key="index"
-              class="image-preview"
-            >
-              <img v-if="image" :src="image" alt="プレビュー" />
-              <div v-else class="image-placeholder">
-                画像{{ index + 1 }}
-              </div>
-              <button
-                type="button"
-                class="remove-image-btn"
-                @click="removeImage(index)"
-                v-if="image"
-              >
-                ✕
-              </button>
-              <input
-                type="file"
-                @change="handleImageUpload($event, index)"
-                accept="image/*"
-                class="file-input"
-              />
-            </div>
-          </div>
-          <p class="form-hint">JPG, PNG形式のみ対応</p>
+          <label for="category" class="form-label required">カテゴリ</label>
+          <select
+            id="category"
+            v-model="form.category"
+            class="form-select"
+            required
+          >
+            <option value="">カテゴリを選択</option>
+            <option value="値上げ情報">値上げ情報</option>
+            <option value="値下げ速報">値下げ速報</option>
+            <option value="特売情報">特売情報</option>
+            <option value="節約術">節約術</option>
+            <option value="活用術">活用術</option>
+            <option value="市場分析">市場分析</option>
+            <option value="買い物術">買い物術</option>
+            <option value="アプリ更新">アプリ更新</option>
+          </select>
         </div>
 
-        <!-- タグ -->
+        <!-- 公開ステータス -->
+        <div class="form-group">
+          <label for="status" class="form-label required">公開ステータス</label>
+          <select
+            id="status"
+            v-model="form.status"
+            class="form-select"
+            required
+          >
+            <option value="published">公開</option>
+            <option value="draft">非公開</option>
+          </select>
+        </div>
+
+        <!-- 画像URL（最大3枚） -->
+        <div class="form-group">
+          <label class="form-label">画像URL（最大3枚）</label>
+          <div class="image-inputs">
+            <div v-for="i in 3" :key="i" class="image-input-group">
+              <input
+                v-model="form.images[i - 1]"
+                type="url"
+                class="form-input"
+                :placeholder="`画像${i}のURL（オプション）`"
+              />
+              <div v-if="form.images[i - 1]" class="image-preview">
+                <img :src="form.images[i - 1]" :alt="`画像${i}`" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- タグ（最大3つ） -->
         <div class="form-group">
           <label class="form-label">タグ（最大3つ）</label>
-          <div class="tags-input-area">
-            <div
-              v-for="(tag, index) in form.tags"
-              :key="index"
-              class="tag-input-row"
-            >
-              <input
-                v-model="form.tags[index]"
-                type="text"
-                class="form-input"
-                :placeholder="`タグ${index + 1}`"
-              />
-              <button
-                v-if="tag"
-                type="button"
-                class="remove-tag-btn"
-                @click="removeTag(index)"
-              >
-                削除
-              </button>
-            </div>
+          <div class="tag-inputs">
+            <input
+              v-for="i in 3"
+              :key="i"
+              v-model="form.tags[i - 1]"
+              type="text"
+              class="form-input tag-input"
+              :placeholder="`タグ${i}（オプション）`"
+            />
           </div>
         </div>
 
-        <!-- ボタンエリア -->
+        <!-- エラーメッセージ -->
+        <div v-if="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
+
+        <!-- フォームアクション -->
         <div class="form-actions">
-          <button type="button" class="btn btn-secondary" @click="goBack">
+          <button
+            type="button"
+            @click="goBack"
+            class="btn btn-cancel"
+          >
             キャンセル
           </button>
-          <button type="submit" class="btn btn-primary" :disabled="saving">
-            {{ saving ? '保存中...' : '登録' }}
+          <button
+            type="submit"
+            class="btn btn-submit"
+            :disabled="loading"
+          >
+            {{ loading ? '処理中...' : '登録内容を確認' }}
           </button>
         </div>
       </form>
     </div>
 
     <!-- 確認モーダル -->
-    <div v-if="showConfirmModal" class="modal-overlay" @click="showConfirmModal = false">
-      <div class="modal-content" @click.stop>
-        <h2 class="modal-title">確認</h2>
-        <div class="modal-body">
-          <p class="modal-message">{{ isEditMode ? 'コラムを更新' : 'コラムを登録' }}しますか？</p>
+    <div v-if="showConfirmModal" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">登録内容の確認</h2>
+        </div>
 
-          <div class="confirm-details">
-            <div class="detail-item">
-              <span class="detail-label">タイトル:</span>
-              <span class="detail-value">{{ form.title }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">本文:</span>
-              <span class="detail-value">{{ truncateText(form.content, 100) }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">タグ:</span>
-              <span class="detail-value">{{ form.tags.filter(t => t).join(', ') || 'なし' }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">画像:</span>
-              <span class="detail-value">{{ form.images.filter(i => i).length }}枚</span>
+        <div class="modal-body">
+          <div class="confirm-item">
+            <span class="confirm-label">タイトル:</span>
+            <span class="confirm-value">{{ form.title }}</span>
+          </div>
+
+          <div class="confirm-item">
+            <span class="confirm-label">カテゴリ:</span>
+            <span class="confirm-value">{{ form.category }}</span>
+          </div>
+
+          <div class="confirm-item">
+            <span class="confirm-label">ステータス:</span>
+            <span class="confirm-value">{{ form.status === 'published' ? '公開' : '非公開' }}</span>
+          </div>
+
+          <div class="confirm-item">
+            <span class="confirm-label">本文:</span>
+            <span class="confirm-value text-preview">{{ form.content }}</span>
+          </div>
+
+          <div v-if="filteredImages.length > 0" class="confirm-item">
+            <span class="confirm-label">画像:</span>
+            <span class="confirm-value">{{ filteredImages.length }}枚</span>
+          </div>
+
+          <div v-if="filteredTags.length > 0" class="confirm-item">
+            <span class="confirm-label">タグ:</span>
+            <div class="confirm-tags">
+              <span
+                v-for="(tag, index) in filteredTags"
+                :key="index"
+                class="confirm-tag"
+              >
+                {{ tag }}
+              </span>
             </div>
           </div>
         </div>
-        <div class="modal-actions">
-          <button class="btn btn-secondary" @click="showConfirmModal = false">
+
+        <div class="modal-footer">
+          <button @click="closeModal" class="btn btn-cancel">
             キャンセル
           </button>
-          <button class="btn btn-primary" @click="confirmSave">
-            OK
+          <button @click="confirmSave" class="btn btn-submit">
+            {{ isEditMode ? '更新する' : '登録する' }}
           </button>
         </div>
       </div>
@@ -150,7 +199,8 @@
 </template>
 
 <script>
-import { articles } from '@/data/articles'
+import { useAdminStore } from '@/store/admin'
+import { useArticlesStore } from '@/store/articles'
 
 export default {
   name: 'ArticleForm',
@@ -159,101 +209,158 @@ export default {
       form: {
         title: '',
         content: '',
+        category: '',
+        status: 'draft',
         images: ['', '', ''],
         tags: ['', '', '']
       },
-      saving: false,
       showConfirmModal: false,
-      isEditMode: false,
-      articleId: null
+      errorMessage: '',
+      loading: false
+    }
+  },
+  setup() {
+    const adminStore = useAdminStore()
+    const articlesStore = useArticlesStore()
+    return { adminStore, articlesStore }
+  },
+  computed: {
+    isEditMode() {
+      return !!this.$route.params.id
+    },
+    filteredImages() {
+      return this.form.images.filter(img => img.trim() !== '')
+    },
+    filteredTags() {
+      return this.form.tags.filter(tag => tag.trim() !== '')
+    }
+  },
+  methods: {
+    handleSubmit() {
+      this.errorMessage = ''
+      this.showConfirmModal = true
+    },
+    closeModal() {
+      this.showConfirmModal = false
+    },
+    async confirmSave() {
+      this.loading = true
+      this.errorMessage = ''
+
+      try {
+        const articleData = {
+          title: this.form.title,
+          content: this.form.content,
+          category: this.form.category,
+          status: this.form.status,
+          images: this.filteredImages,
+          tags: this.filteredTags
+        }
+
+        if (this.isEditMode) {
+          // 編集
+          const updated = this.articlesStore.updateArticle(
+            this.$route.params.id,
+            articleData
+          )
+          if (updated) {
+            alert('記事を更新しました')
+            this.$router.push('/admin/articles')
+          } else {
+            this.errorMessage = '記事の更新に失敗しました'
+          }
+        } else {
+          // 新規作成
+          this.articlesStore.addArticle(articleData)
+          alert('記事を登録しました')
+          this.$router.push('/admin/articles')
+        }
+      } catch (error) {
+        this.errorMessage = '処理中にエラーが発生しました'
+        console.error('Save error:', error)
+      } finally {
+        this.loading = false
+        this.showConfirmModal = false
+      }
+    },
+    loadArticle() {
+      if (this.isEditMode) {
+        const article = this.articlesStore.getArticleById(this.$route.params.id)
+        if (article) {
+          this.form.title = article.title
+          this.form.content = article.content
+          this.form.category = article.category
+          this.form.status = article.status || 'draft'
+          this.form.images = [
+            article.images?.[0] || '',
+            article.images?.[1] || '',
+            article.images?.[2] || ''
+          ]
+          this.form.tags = [
+            article.tags?.[0] || '',
+            article.tags?.[1] || '',
+            article.tags?.[2] || ''
+          ]
+        } else {
+          alert('記事が見つかりませんでした')
+          this.$router.push('/admin/articles')
+        }
+      }
+    },
+    goBack() {
+      if (confirm('入力内容は破棄されます。よろしいですか？')) {
+        this.$router.push('/admin/articles')
+      }
+    },
+    handleLogout() {
+      if (confirm('ログアウトしますか？')) {
+        this.adminStore.logout()
+        this.$router.push('/admin/login')
+      }
     }
   },
   mounted() {
-    // ログインチェック
-    const isLoggedIn = localStorage.getItem('isAdminLoggedIn')
-    if (!isLoggedIn) {
+    // 認証チェック
+    this.adminStore.checkAuth()
+    if (!this.adminStore.isAuthenticated) {
       this.$router.push('/admin/login')
       return
     }
 
-    // 編集モードの場合、記事データを取得
-    const id = this.$route.params.id
-    if (id && id !== 'new') {
-      this.isEditMode = true
-      this.articleId = id
-      this.loadArticle(id)
-    }
-  },
-  methods: {
-    loadArticle(id) {
-      // TODO: 本番環境ではAPIから取得
-      const article = articles.find(a => a.id === parseInt(id))
-      if (article) {
-        this.form.title = article.title
-        this.form.content = article.content
-        this.form.tags = [...article.tags, '', ''].slice(0, 3)
-        // 画像は後で実装
-        this.form.images = ['', '', '']
-      }
-    },
-    handleImageUpload(event, index) {
-      const file = event.target.files[0]
-      if (!file) return
-
-      // 画像プレビュー
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        this.form.images[index] = e.target.result
-        this.form.images = [...this.form.images] // リアクティブ更新
-      }
-      reader.readAsDataURL(file)
-    },
-    removeImage(index) {
-      this.form.images[index] = ''
-      this.form.images = [...this.form.images]
-    },
-    removeTag(index) {
-      this.form.tags[index] = ''
-    },
-    handleSubmit() {
-      this.showConfirmModal = true
-    },
-    async confirmSave() {
-      this.saving = true
-      this.showConfirmModal = false
-
-      try {
-        // TODO: 本番環境ではAPIに送信
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        // 登録・更新成功
-        alert(this.isEditMode ? 'コラムを更新しました' : 'コラムを登録しました')
-        this.$router.push('/admin/articles')
-      } catch (error) {
-        console.error('保存エラー:', error)
-        alert('保存に失敗しました')
-      } finally {
-        this.saving = false
-      }
-    },
-    goBack() {
-      if (confirm('編集内容が破棄されますが、よろしいですか？')) {
-        this.$router.push('/admin/articles')
-      }
-    },
-    truncateText(text, length) {
-      if (text.length <= length) return text
-      return text.substring(0, length) + '...'
-    }
+    // 編集モードの場合、記事データをロード
+    this.loadArticle()
   }
 }
 </script>
 
 <style scoped>
-.article-form-page {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 24px;
+.admin-article-form {
+  min-height: 100vh;
+  background-color: var(--bg-light);
+}
+
+.admin-header {
+  background-color: white;
+  padding: 24px 32px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin: 0;
 }
 
 /* パンくずリスト */
@@ -261,49 +368,63 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 24px;
   font-size: 14px;
   color: var(--text-secondary);
 }
 
-.breadcrumb-item {
-  color: var(--text-secondary);
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-
-.breadcrumb-item:hover:not(.active) {
+.breadcrumb a {
   color: var(--primary-color);
+  text-decoration: none;
+  transition: opacity 0.3s ease;
 }
 
-.breadcrumb-item.active {
-  color: var(--text-primary);
-  font-weight: 600;
+.breadcrumb a:hover {
+  opacity: 0.7;
+  text-decoration: underline;
 }
 
-.breadcrumb-separator {
+.breadcrumb .separator {
   color: var(--text-secondary);
 }
 
-.page-header {
-  margin-bottom: 32px;
-}
-
-.page-title {
-  font-size: 32px;
-  font-weight: bold;
+.breadcrumb .current {
   color: var(--text-primary);
+  font-weight: 500;
 }
 
-.form-container {
+.logout-button {
+  padding: 10px 20px;
+  background-color: var(--danger-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+  background-color: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.page-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 32px;
+}
+
+.article-form {
   background-color: white;
-  border-radius: 12px;
   padding: 32px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .form-group {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .form-label {
@@ -315,180 +436,123 @@ export default {
 }
 
 .form-label.required::after {
-  content: '*';
+  content: ' *';
   color: var(--danger-color);
-  margin-left: 4px;
 }
 
 .form-input,
-.form-textarea {
+.form-textarea,
+.form-select {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid var(--border-color);
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 16px;
   font-family: inherit;
-  transition: all 0.3s ease;
+  outline: none;
+  transition: border-color 0.3s ease;
 }
 
 .form-input:focus,
-.form-textarea:focus {
-  outline: none;
+.form-textarea:focus,
+.form-select:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .form-textarea {
   resize: vertical;
-  line-height: 1.6;
+  min-height: 200px;
 }
 
-.form-hint {
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-top: 8px;
-}
-
-/* 画像アップロード */
-.image-upload-area {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.image-inputs {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
-.image-preview {
-  position: relative;
-  aspect-ratio: 16 / 9;
-  border: 2px dashed var(--border-color);
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.image-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.image-preview:hover {
-  border-color: var(--primary-color);
+.image-preview {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--border-color);
 }
 
 .image-preview img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  display: block;
 }
 
-.image-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-
-.file-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.remove-image-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 28px;
-  height: 28px;
-  background-color: var(--danger-color);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
-
-.remove-image-btn:hover {
-  background-color: #dc2626;
-}
-
-/* タグ入力 */
-.tags-input-area {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.tag-input-row {
+.tag-inputs {
   display: flex;
   gap: 12px;
-  align-items: center;
+  flex-wrap: wrap;
 }
 
-.tag-input-row .form-input {
+.tag-input {
   flex: 1;
+  min-width: 150px;
 }
 
-.remove-tag-btn {
-  padding: 8px 16px;
-  background-color: var(--danger-color);
-  color: white;
-  border: none;
+.error-message {
+  padding: 12px 16px;
+  background-color: #fee;
+  border: 1px solid var(--danger-color);
   border-radius: 8px;
+  color: var(--danger-color);
   font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  margin-bottom: 16px;
 }
 
-.remove-tag-btn:hover {
-  background-color: #dc2626;
-}
-
-/* フォームアクション */
 .form-actions {
   display: flex;
   gap: 16px;
   justify-content: flex-end;
   margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border-color);
+  padding-top: 32px;
+  border-top: 2px solid var(--border-color);
 }
 
 .btn {
   padding: 12px 32px;
   border: none;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.btn-primary {
+.btn-cancel {
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+}
+
+.btn-cancel:hover {
+  background-color: #e5e7eb;
+}
+
+.btn-submit {
   background-color: var(--primary-color);
   color: white;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background-color: #2563eb;
+.btn-submit:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-.btn-secondary {
-  background-color: var(--bg-light);
-  color: var(--text-primary);
-}
-
-.btn-secondary:hover {
-  background-color: #e5e7eb;
-}
-
-.btn:disabled {
-  opacity: 0.5;
+.btn-submit:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
@@ -499,96 +563,130 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   z-index: 1000;
+  padding: 20px;
 }
 
 .modal-content {
   background-color: white;
   border-radius: 16px;
-  padding: 32px;
   max-width: 600px;
-  width: 90%;
-  max-height: 80vh;
+  width: 100%;
+  max-height: 90vh;
   overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  padding: 24px;
+  border-bottom: 2px solid var(--border-color);
 }
 
 .modal-title {
   font-size: 24px;
   font-weight: bold;
-  margin-bottom: 16px;
   color: var(--text-primary);
 }
 
 .modal-body {
-  margin-bottom: 24px;
+  padding: 24px;
 }
 
-.modal-message {
-  font-size: 16px;
+.confirm-item {
   margin-bottom: 20px;
-  color: var(--text-primary);
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.confirm-details {
-  background-color: var(--bg-light);
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.detail-item {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.detail-item:last-child {
+.confirm-item:last-child {
   margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
-.detail-label {
+.confirm-label {
+  display: block;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--text-primary);
-  min-width: 80px;
-}
-
-.detail-value {
   color: var(--text-secondary);
-  flex: 1;
+  margin-bottom: 8px;
 }
 
-.modal-actions {
+.confirm-value {
+  display: block;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.text-preview {
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.confirm-tags {
   display: flex;
-  gap: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.confirm-tag {
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: var(--primary-color);
+  color: white;
+  font-size: 14px;
+  border-radius: 16px;
+}
+
+.modal-footer {
+  padding: 24px;
+  border-top: 2px solid var(--border-color);
+  display: flex;
+  gap: 16px;
   justify-content: flex-end;
 }
 
 @media (max-width: 768px) {
-  .article-form-page {
-    padding: 16px;
+  .admin-header {
+    padding: 16px 20px;
   }
 
   .page-title {
-    font-size: 24px;
+    font-size: 22px;
   }
 
-  .form-container {
-    padding: 24px 16px;
+  .page-content {
+    padding: 24px 20px;
   }
 
-  .image-upload-area {
-    grid-template-columns: 1fr;
+  .article-form {
+    padding: 20px;
+  }
+
+  .tag-inputs {
+    flex-direction: column;
+  }
+
+  .tag-input {
+    width: 100%;
   }
 
   .form-actions {
-    flex-direction: column;
+    flex-direction: column-reverse;
   }
 
   .btn {
     width: 100%;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
   }
 }
 </style>
