@@ -10,8 +10,32 @@
       </button>
     </section>
 
-    <!-- 検索フォーム -->
-    <section class="search-section">
+    <!-- メインコンテンツエリア -->
+    <div class="main-container">
+      <!-- サイドバー -->
+      <aside class="sidebar">
+        <h2 class="sidebar-title">人気商品</h2>
+
+        <div v-for="categoryData in popularProductsByCategory" :key="categoryData.category" class="popular-category">
+          <h3 class="popular-category-title">{{ categoryData.category }}</h3>
+          <div class="popular-products-list">
+            <router-link
+              v-for="product in categoryData.products"
+              :key="product.id"
+              :to="`/item/${product.id}`"
+              class="popular-product-item"
+            >
+              <span class="popular-product-name">{{ product.name }}</span>
+              <span class="popular-product-price">¥{{ product.lowestPrice }}</span>
+            </router-link>
+          </div>
+        </div>
+      </aside>
+
+      <!-- メインコンテンツ -->
+      <main class="main-content">
+        <!-- 検索フォーム -->
+        <section class="search-section">
       <div class="search-container">
         <h2 class="search-title">商品を検索</h2>
         
@@ -105,11 +129,11 @@
         >
           次へ →
         </button>
-      </div>
-    </section>
+        </div>
+      </section>
 
-    <!-- 人気商品の価格推移 -->
-    <section class="products" ref="productsSection">
+      <!-- 人気商品の価格推移 -->
+      <section class="products" ref="productsSection">
       <h2 class="section-title">人気商品の価格推移</h2>
 
       <div v-if="loading && !hasSearched" class="loading">
@@ -125,15 +149,15 @@
           v-for="product in products"
           :key="product.id"
           :product="product"
-        />
-      </div>
-    </section>
+          />
+        </div>
+      </section>
 
-    <!-- 家計・物価コラム -->
-    <ArticleList :limit="8" />
+      <!-- 家計・物価コラム -->
+      <ArticleList :limit="8" />
 
-    <!-- CTAセクション -->
-    <section class="cta">
+      <!-- CTAセクション -->
+      <section class="cta">
       <div class="cta-content">
         <h2 class="cta-title">今すぐ始めよう</h2>
         <p class="cta-description">
@@ -141,9 +165,11 @@
         </p>
         <button class="btn btn-primary btn-large">
           LINE通知を受け取る
-        </button>
-      </div>
-    </section>
+          </button>
+        </div>
+      </section>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -208,6 +234,22 @@ export default {
     },
     totalPages() {
       return Math.ceil(this.filteredProducts.length / this.itemsPerPage)
+    },
+    popularProductsByCategory() {
+      // 表示するカテゴリ（3つ）
+      const targetCategories = ['飲料', '生鮮食品', 'お菓子・おつまみ']
+
+      return targetCategories.map(category => {
+        // カテゴリごとに商品を取得（最大3件）
+        const categoryProducts = this.products
+          .filter(p => p.category === category)
+          .slice(0, 3)
+
+        return {
+          category,
+          products: categoryProducts
+        }
+      }).filter(cat => cat.products.length > 0) // 商品が存在するカテゴリのみ返す
     }
   },
   async mounted() {
@@ -274,6 +316,90 @@ export default {
 <style scoped>
 .top-page {
   padding-bottom: 60px;
+}
+
+/* メインコンテナ */
+.main-container {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* サイドバー */
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
+}
+
+.sidebar-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.popular-category {
+  margin-bottom: 32px;
+}
+
+.popular-category-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  padding-left: 8px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.popular-products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.popular-product-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.popular-product-item:hover {
+  background-color: var(--bg-light);
+  transform: translateX(4px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.popular-product-name {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popular-product-price {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-left: 8px;
+}
+
+/* メインコンテンツ */
+.main-content {
+  flex: 1;
+  min-width: 0;
 }
 
 /* CTAボタン */
@@ -568,41 +694,66 @@ export default {
   font-size: 18px;
 }
 
+@media (max-width: 1024px) {
+  .main-container {
+    flex-direction: column-reverse;
+  }
+
+  .sidebar {
+    width: 100%;
+    position: static;
+  }
+
+  .popular-category {
+    margin-bottom: 24px;
+  }
+}
+
 @media (max-width: 768px) {
   .search-container {
     padding: 24px;
   }
-  
+
   .search-title {
     font-size: 24px;
   }
-  
+
   .search-input-wrapper {
     flex-direction: column;
   }
-  
+
   .search-button {
     width: 100%;
   }
-  
+
   .cta-buttons {
     flex-direction: column;
   }
-  
+
   .cta {
     padding: 40px 20px;
   }
-  
+
   .cta-title {
     font-size: 28px;
   }
-  
+
   .cta-description {
     font-size: 16px;
   }
-  
+
   .section-title {
     font-size: 24px;
+  }
+
+  .sidebar-title {
+    font-size: 18px;
+  }
+
+  .popular-products-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
   }
 }
 </style>
