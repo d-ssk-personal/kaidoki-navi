@@ -3,6 +3,7 @@ import axios from 'axios'
 // 開発環境用のモックデータ生成
 const generateMockData = () => {
   const categories = ['飲料', 'お菓子・おつまみ', '生鮮食品', '冷蔵・冷凍', '調味料', 'パン・シリアル', '日用品']
+  const shops = ['イオン', 'イトーヨーカドー', '西友ネットスーパー', 'ライフ', '楽天西友ネットスーパー']
   const products = [
     { name: '牛乳', category: '飲料', basePrice: 250 },
     { name: '卵', category: '生鮮食品', basePrice: 200 },
@@ -13,19 +14,40 @@ const generateMockData = () => {
     { name: 'ポテトチップス', category: 'お菓子・おつまみ', basePrice: 120 },
     { name: '冷凍餃子', category: '冷蔵・冷凍', basePrice: 280 },
     { name: '醤油', category: '調味料', basePrice: 200 },
-    { name: 'チョコレート', category: 'お菓子・おつまみ', basePrice: 180 }
+    { name: 'チョコレート', category: 'お菓子・おつまみ', basePrice: 180 },
+    { name: 'ミネラルウォーター', category: '飲料', basePrice: 98 },
+    { name: 'カップ麺', category: 'お菓子・おつまみ', basePrice: 158 },
+    { name: '鶏むね肉', category: '生鮮食品', basePrice: 580 },
+    { name: 'アイスクリーム', category: '冷蔵・冷凍', basePrice: 280 },
+    { name: 'マヨネーズ', category: '調味料', basePrice: 298 },
+    { name: 'ロールパン', category: 'パン・シリアル', basePrice: 148 },
+    { name: 'ティッシュペーパー', category: '日用品', basePrice: 298 },
+    { name: 'オレンジジュース', category: '飲料', basePrice: 198 },
+    { name: 'せんべい', category: 'お菓子・おつまみ', basePrice: 198 },
+    { name: '豆腐', category: '冷蔵・冷凍', basePrice: 98 }
   ]
-  
-  return products.map((product, index) => ({
-    id: `item-${index + 1}`,
-    name: product.name,
-    category: product.category,
-    currentPrice: Math.round(product.basePrice * (0.9 + Math.random() * 0.2)),
-    previousPrice: product.basePrice,
-    shop: ['スーパーA', 'ドラッグストアB', 'コンビニC'][Math.floor(Math.random() * 3)],
-    priceChange: Math.round((Math.random() - 0.5) * 50),
-    lastUpdated: new Date().toISOString()
-  }))
+
+  return products.map((product, index) => {
+    // 各店舗の価格を生成
+    const shopPrices = shops.map(shop => ({
+      shop,
+      price: Math.round(product.basePrice * (0.85 + Math.random() * 0.3))
+    }))
+
+    // 最安値を見つける
+    const lowestPrice = Math.min(...shopPrices.map(sp => sp.price))
+    const lowestShop = shopPrices.find(sp => sp.price === lowestPrice).shop
+
+    return {
+      id: `item-${index + 1}`,
+      name: product.name,
+      category: product.category,
+      lowestPrice: lowestPrice,
+      lowestShop: lowestShop,
+      shopPrices: shopPrices,
+      lastUpdated: new Date().toISOString()
+    }
+  })
 }
 
 const generatePriceHistory = (days = 30) => {
