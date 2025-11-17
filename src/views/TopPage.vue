@@ -1,12 +1,5 @@
 <template>
   <div class="top-page">
-    <!-- 買いどきナビとは?セクション -->
-    <section class="about-section">
-      <button class="about-link" @click="showAboutModal = true">
-        ❓ 買いどきナビとは?
-      </button>
-    </section>
-
     <!-- CTAボタン -->
     <section class="cta-buttons">
       <button class="btn btn-primary" @click="scrollToProducts">
@@ -17,8 +10,32 @@
       </button>
     </section>
 
-    <!-- 検索フォーム -->
-    <section class="search-section">
+    <!-- メインコンテンツエリア -->
+    <div class="main-container">
+      <!-- サイドバー -->
+      <aside class="sidebar">
+        <h2 class="sidebar-title">人気商品</h2>
+
+        <div v-for="categoryData in popularProductsByCategory" :key="categoryData.category" class="popular-category">
+          <h3 class="popular-category-title">{{ categoryData.category }}</h3>
+          <div class="popular-products-list">
+            <router-link
+              v-for="product in categoryData.products"
+              :key="product.id"
+              :to="`/item/${product.id}`"
+              class="popular-product-item"
+            >
+              <span class="popular-product-name">{{ product.name }}</span>
+              <span class="popular-product-price">¥{{ product.lowestPrice }}</span>
+            </router-link>
+          </div>
+        </div>
+      </aside>
+
+      <!-- メインコンテンツ -->
+      <main class="main-content">
+        <!-- 検索フォーム -->
+        <section class="search-section">
       <div class="search-container">
         <h2 class="search-title">商品を検索</h2>
         
@@ -77,16 +94,46 @@
       </div>
       
       <div v-else class="products-grid grid grid-2">
-        <ProductCard 
-          v-for="product in filteredProducts" 
-          :key="product.id" 
-          :product="product" 
+        <ProductCard
+          v-for="product in paginatedProducts"
+          :key="product.id"
+          :product="product"
         />
       </div>
-    </section>
 
-    <!-- 人気商品の価格推移 -->
-    <section class="products" ref="productsSection">
+      <!-- ページネーション -->
+      <div v-if="totalPages > 1" class="pagination">
+        <button
+          class="pagination-btn"
+          :disabled="currentPage === 1"
+          @click="goToPage(currentPage - 1)"
+        >
+          ← 前へ
+        </button>
+
+        <div class="page-numbers">
+          <button
+            v-for="page in totalPages"
+            :key="page"
+            :class="['page-number', { active: currentPage === page }]"
+            @click="goToPage(page)"
+          >
+            {{ page }}
+          </button>
+        </div>
+
+        <button
+          class="pagination-btn"
+          :disabled="currentPage === totalPages"
+          @click="goToPage(currentPage + 1)"
+        >
+          次へ →
+        </button>
+        </div>
+      </section>
+
+      <!-- 人気商品の価格推移 -->
+      <section class="products" ref="productsSection">
       <h2 class="section-title">人気商品の価格推移</h2>
 
       <div v-if="loading && !hasSearched" class="loading">
@@ -102,15 +149,15 @@
           v-for="product in products"
           :key="product.id"
           :product="product"
-        />
-      </div>
-    </section>
+          />
+        </div>
+      </section>
 
-    <!-- 家計・物価コラム -->
-    <ArticleList :limit="8" />
+      <!-- 家計・物価コラム -->
+      <ArticleList :limit="8" />
 
-    <!-- CTAセクション -->
-    <section class="cta">
+      <!-- CTAセクション -->
+      <section class="cta">
       <div class="cta-content">
         <h2 class="cta-title">今すぐ始めよう</h2>
         <p class="cta-description">
@@ -118,70 +165,10 @@
         </p>
         <button class="btn btn-primary btn-large">
           LINE通知を受け取る
-        </button>
-      </div>
-    </section>
-
-    <!-- 買いどきナビとは?モーダル -->
-    <div v-if="showAboutModal" class="modal-overlay" @click="showAboutModal = false">
-      <div class="modal-content" @click.stop>
-        <button class="modal-close" @click="showAboutModal = false">✕</button>
-        
-        <h2 class="modal-title">買いどきナビとは?</h2>
-        
-        <div class="modal-body">
-          <div class="modal-hero">
-            <p class="modal-description">
-              価格変動を見逃さない<br>
-              賢い買い物で家計を守る
-            </p>
-            <p class="modal-subdescription">
-              2025年問題で物価高騰が続く今、買いどきナビが<br>
-              商品の値上げ・値下げをリアルタイムでお知らせします
-            </p>
-          </div>
-
-          <h3 class="modal-section-title">3つの特徴</h3>
-          
-          <div class="features-list">
-            <div class="feature-item">
-              <div class="feature-icon">📊</div>
-              <div class="feature-content">
-                <h4 class="feature-title">価格推移の可視化</h4>
-                <p class="feature-description">
-                  過去30日〜180日の価格変動をグラフで確認。買い時を逃しません。
-                </p>
-              </div>
-            </div>
-
-            <div class="feature-item">
-              <div class="feature-icon">🤖</div>
-              <div class="feature-content">
-                <h4 class="feature-title">AI要約</h4>
-                <p class="feature-description">
-                  最安値情報や値下げ傾向をAIが分析。節約のヒントをお届けします。
-                </p>
-              </div>
-            </div>
-
-            <div class="feature-item">
-              <div class="feature-icon">🔔</div>
-              <div class="feature-content">
-                <h4 class="feature-title">リアルタイム通知</h4>
-                <p class="feature-description">
-                  値上げ・値下げを即座にお知らせ。LINEやWebプッシュで受け取れます。
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-actions">
-            <button class="btn btn-primary" @click="showAboutModal = false">
-              閉じる
-            </button>
-          </div>
+          </button>
         </div>
-      </div>
+      </section>
+      </main>
     </div>
   </div>
 </template>
@@ -203,10 +190,11 @@ export default {
       products: [],
       loading: true,
       error: null,
-      showAboutModal: false,
       searchQuery: '',
       selectedCategory: '',
       hasSearched: false,
+      currentPage: 1,
+      itemsPerPage: 10,
       categories: [
         '飲料',
         'お菓子・おつまみ',
@@ -222,22 +210,46 @@ export default {
   computed: {
     filteredProducts() {
       let results = [...this.products]
-      
+
       // カテゴリフィルター
       if (this.selectedCategory) {
         results = results.filter(p => p.category === this.selectedCategory)
       }
-      
+
       // キーワード検索
       if (this.searchQuery.trim()) {
         const query = this.searchQuery.toLowerCase()
-        results = results.filter(p => 
+        results = results.filter(p =>
           p.name.toLowerCase().includes(query) ||
           p.category.toLowerCase().includes(query)
         )
       }
-      
+
       return results
+    },
+    paginatedProducts() {
+      const start = (this.currentPage - 1) * this.itemsPerPage
+      const end = start + this.itemsPerPage
+      return this.filteredProducts.slice(start, end)
+    },
+    totalPages() {
+      return Math.ceil(this.filteredProducts.length / this.itemsPerPage)
+    },
+    popularProductsByCategory() {
+      // 表示するカテゴリ（3つ）
+      const targetCategories = ['飲料', '生鮮食品', 'お菓子・おつまみ']
+
+      return targetCategories.map(category => {
+        // カテゴリごとに商品を取得（最大3件）
+        const categoryProducts = this.products
+          .filter(p => p.category === category)
+          .slice(0, 3)
+
+        return {
+          category,
+          products: categoryProducts
+        }
+      }).filter(cat => cat.products.length > 0) // 商品が存在するカテゴリのみ返す
     }
   },
   async mounted() {
@@ -262,6 +274,7 @@ export default {
     },
     performSearch() {
       this.hasSearched = true
+      this.currentPage = 1
       // スクロールして検索結果を表示
       this.$nextTick(() => {
         const resultsSection = document.querySelector('.search-results')
@@ -276,12 +289,22 @@ export default {
       } else {
         this.selectedCategory = category
       }
-      this.performSearch()
+    },
+    goToPage(page) {
+      this.currentPage = page
+      // スクロールして検索結果の先頭を表示
+      this.$nextTick(() => {
+        const resultsSection = document.querySelector('.search-results')
+        if (resultsSection) {
+          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      })
     },
     clearSearch() {
       this.searchQuery = ''
       this.selectedCategory = ''
       this.hasSearched = false
+      this.currentPage = 1
     },
     scrollToProducts() {
       this.$refs.productsSection?.scrollIntoView({ behavior: 'smooth' })
@@ -295,32 +318,88 @@ export default {
   padding-bottom: 60px;
 }
 
-/* 買いどきナビとは?セクション */
-.about-section {
-  text-align: center;
+/* メインコンテナ */
+.main-container {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* サイドバー */
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
+}
+
+.sidebar-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-primary);
   margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--primary-color);
 }
 
-.about-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  background-color: white;
-  border: 2px solid var(--primary-color);
-  border-radius: 24px;
-  color: var(--primary-color);
-  font-size: 18px;
+.popular-category {
+  margin-bottom: 32px;
+}
+
+.popular-category-title {
+  font-size: 16px;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  padding-left: 8px;
+  border-left: 4px solid var(--primary-color);
 }
 
-.about-link:hover {
-  background-color: var(--primary-color);
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+.popular-products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.popular-product-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.popular-product-item:hover {
+  background-color: var(--bg-light);
+  transform: translateX(4px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.popular-product-name {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popular-product-price {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-left: 8px;
+}
+
+/* メインコンテンツ */
+.main-content {
+  flex: 1;
+  min-width: 0;
 }
 
 /* CTAボタン */
@@ -495,6 +574,71 @@ export default {
   color: var(--text-secondary);
 }
 
+/* ページネーション */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 40px;
+  flex-wrap: wrap;
+}
+
+.pagination-btn {
+  padding: 10px 20px;
+  background-color: white;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background-color: var(--bg-light);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.page-number {
+  min-width: 40px;
+  height: 40px;
+  padding: 8px;
+  background-color: white;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.page-number:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background-color: var(--bg-light);
+}
+
+.page-number.active {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
 /* 商品セクション */
 .products {
   margin-bottom: 60px;
@@ -550,206 +694,66 @@ export default {
   font-size: 18px;
 }
 
-/* モーダル */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  padding: 20px;
-  animation: fadeIn 0.3s ease;
-}
-
-.modal-content {
-  background-color: white;
-  border-radius: 16px;
-  max-width: 700px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(50px);
+@media (max-width: 1024px) {
+  .main-container {
+    flex-direction: column-reverse;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .sidebar {
+    width: 100%;
+    position: static;
   }
-}
 
-.modal-close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
-  border: none;
-  font-size: 28px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-.modal-close:hover {
-  background-color: var(--bg-light);
-  color: var(--text-primary);
-}
-
-.modal-title {
-  font-size: 32px;
-  font-weight: bold;
-  text-align: center;
-  padding: 32px 32px 16px;
-  color: var(--text-primary);
-}
-
-.modal-body {
-  padding: 0 32px 32px;
-}
-
-.modal-hero {
-  text-align: center;
-  padding: 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
-  color: white;
-  margin-bottom: 32px;
-}
-
-.modal-description {
-  font-size: 24px;
-  font-weight: bold;
-  line-height: 1.4;
-  margin-bottom: 16px;
-}
-
-.modal-subdescription {
-  font-size: 16px;
-  opacity: 0.95;
-  line-height: 1.6;
-}
-
-.modal-section-title {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 24px;
-  text-align: center;
-  color: var(--text-primary);
-}
-
-.features-list {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  margin-bottom: 32px;
-}
-
-.feature-item {
-  display: flex;
-  gap: 16px;
-  padding: 20px;
-  background-color: var(--bg-light);
-  border-radius: 12px;
-}
-
-.feature-icon {
-  font-size: 40px;
-  flex-shrink: 0;
-}
-
-.feature-content {
-  flex: 1;
-}
-
-.feature-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: var(--text-primary);
-}
-
-.feature-description {
-  font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
-.modal-actions {
-  text-align: center;
+  .popular-category {
+    margin-bottom: 24px;
+  }
 }
 
 @media (max-width: 768px) {
   .search-container {
     padding: 24px;
   }
-  
+
   .search-title {
     font-size: 24px;
   }
-  
+
   .search-input-wrapper {
     flex-direction: column;
   }
-  
+
   .search-button {
     width: 100%;
   }
-  
+
   .cta-buttons {
     flex-direction: column;
   }
-  
+
   .cta {
     padding: 40px 20px;
   }
-  
+
   .cta-title {
     font-size: 28px;
   }
-  
+
   .cta-description {
     font-size: 16px;
   }
-  
+
   .section-title {
     font-size: 24px;
   }
-  
-  .modal-content {
-    max-height: 95vh;
+
+  .sidebar-title {
+    font-size: 18px;
   }
-  
-  .modal-title {
-    font-size: 24px;
-    padding: 24px 16px 12px;
-  }
-  
-  .modal-body {
-    padding: 0 16px 24px;
-  }
-  
-  .modal-description {
-    font-size: 20px;
-  }
-  
-  .modal-subdescription {
-    font-size: 14px;
+
+  .popular-products-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
   }
 }
 </style>
