@@ -13,7 +13,12 @@
     <div class="dashboard-content">
       <h2 class="section-title">メニュー</h2>
       <div class="menu-grid">
-        <router-link to="/admin/articles" class="menu-card">
+        <!-- コラム管理 - システム管理者のみ -->
+        <router-link
+          v-if="adminStore.isSystemAdmin"
+          to="/admin/articles"
+          class="menu-card"
+        >
           <div class="menu-icon">📝</div>
           <h3 class="menu-title">コラム管理</h3>
           <p class="menu-description">
@@ -21,21 +26,42 @@
           </p>
         </router-link>
 
-        <div class="menu-card disabled">
-          <div class="menu-icon">📊</div>
-          <h3 class="menu-title">統計情報</h3>
+        <!-- 店舗管理 - システム管理者のみ -->
+        <router-link
+          v-if="adminStore.isSystemAdmin"
+          to="/admin/stores"
+          class="menu-card"
+        >
+          <div class="menu-icon">🏪</div>
+          <h3 class="menu-title">店舗管理</h3>
           <p class="menu-description">
-            近日公開予定
+            店舗情報の管理を行います
           </p>
-        </div>
+        </router-link>
 
-        <div class="menu-card disabled">
-          <div class="menu-icon">⚙️</div>
-          <h3 class="menu-title">設定</h3>
+        <!-- チラシ管理 - システム管理者と店舗ユーザー -->
+        <router-link
+          to="/admin/flyers"
+          class="menu-card"
+        >
+          <div class="menu-icon">📰</div>
+          <h3 class="menu-title">チラシ管理</h3>
           <p class="menu-description">
-            近日公開予定
+            チラシ情報の管理を行います
           </p>
-        </div>
+        </router-link>
+
+        <!-- アカウント管理 - システム管理者と店舗ユーザー -->
+        <router-link
+          to="/admin/accounts"
+          class="menu-card"
+        >
+          <div class="menu-icon">👥</div>
+          <h3 class="menu-title">アカウント管理</h3>
+          <p class="menu-description">
+            アカウント情報の管理を行います
+          </p>
+        </router-link>
       </div>
     </div>
   </div>

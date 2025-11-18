@@ -49,65 +49,76 @@
       </div>
     </section>
 
-    <!-- 検索結果 -->
-    <section v-if="hasSearched" class="search-results">
-      <div class="results-header">
-        <h2 class="section-title">
-          検索結果
-          <span class="result-count">（{{ filteredProducts.length }}件）</span>
-        </h2>
-        <button class="clear-search" @click="clearSearch">
-          ✕ 検索をクリア
-        </button>
-      </div>
-      
-      <div v-if="loading" class="loading">
-        <p>検索中...</p>
-      </div>
-      
-      <div v-else-if="filteredProducts.length === 0" class="no-results">
-        <p>該当する商品が見つかりませんでした</p>
-        <p class="no-results-hint">別のキーワードやカテゴリで検索してみてください</p>
-      </div>
-      
-      <div v-else class="products-grid grid grid-2">
-        <ProductCard
-          v-for="product in paginatedProducts"
-          :key="product.id"
-          :product="product"
-        />
-      </div>
+    <!-- チラシ検索セクション -->
+    <section class="flyer-section">
+      <div class="flyer-search-container">
+        <h2 class="flyer-search-title">チラシを検索</h2>
 
-      <!-- ページネーション -->
-      <div v-if="totalPages > 1" class="pagination">
-        <button
-          class="pagination-btn"
-          :disabled="currentPage === 1"
-          @click="goToPage(currentPage - 1)"
-        >
-          ← 前へ
-        </button>
+        <div class="flyer-search-form">
+          <!-- フリーワード検索 -->
+          <div class="flyer-search-input-wrapper">
+            <input
+              type="text"
+              v-model="flyerSearchQuery"
+              placeholder="店舗名で検索（例: イオン、マルエツなど）"
+              class="flyer-search-input"
+              @keyup.enter="performFlyerSearch"
+            />
+          </div>
 
-        <div class="page-numbers">
-          <button
-            v-for="page in totalPages"
-            :key="page"
-            :class="['page-number', { active: currentPage === page }]"
-            @click="goToPage(page)"
-          >
-            {{ page }}
+          <!-- 地域選択 -->
+          <div class="region-filter">
+            <label class="filter-label">地域で絞り込み:</label>
+            <div class="region-select-wrapper">
+              <select v-model="selectedRegion" @change="onRegionChange" class="region-select">
+                <option value="">地域を選択</option>
+                <option v-for="region in regions" :key="region.name" :value="region.name">
+                  {{ region.name }}
+                </option>
+              </select>
+
+              <select
+                v-if="selectedRegion"
+                v-model="selectedPrefecture"
+                class="prefecture-select"
+              >
+                <option value="">都道府県を選択</option>
+                <option
+                  v-for="prefecture in currentPrefectures"
+                  :key="prefecture"
+                  :value="prefecture"
+                >
+                  {{ prefecture }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <button class="flyer-search-button" @click="performFlyerSearch">
+            🔍 店舗を検索
           </button>
         </div>
+      </div>
 
-        <button
-          class="pagination-btn"
-          :disabled="currentPage === totalPages"
-          @click="goToPage(currentPage + 1)"
-        >
-          次へ →
-        </button>
+      <!-- おすすめのチラシ -->
+      <div class="recommended-flyers">
+        <h2 class="section-title">おすすめのチラシ</h2>
+        <div class="flyer-carousel">
+          <div
+            v-for="flyer in recommendedFlyers"
+            :key="flyer.id"
+            class="flyer-card"
+            @click="openFlyerModal(flyer)"
+          >
+            <img :src="flyer.image" :alt="flyer.storeName" class="flyer-image" />
+            <div class="flyer-info">
+              <h3 class="flyer-store-name">{{ flyer.storeName }}</h3>
+              <p class="flyer-period">{{ flyer.period }}</p>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
+    </section>
 
       <!-- 人気商品の価格推移 -->
       <section class="products" ref="productsSection">
@@ -186,9 +197,6 @@ export default {
       error: null,
       searchQuery: '',
       selectedCategory: '',
-      hasSearched: false,
-      currentPage: 1,
-      itemsPerPage: 10,
       categories: [
         '飲料',
         'お菓子・おつまみ',
@@ -198,37 +206,80 @@ export default {
         'パン・シリアル',
         '日用品',
         'その他'
+      ],
+      // チラシ検索関連
+      flyerSearchQuery: '',
+      selectedRegion: '',
+      selectedPrefecture: '',
+      regions: [
+        {
+          name: '北海道',
+          prefectures: ['北海道']
+        },
+        {
+          name: '東北',
+          prefectures: ['青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県']
+        },
+        {
+          name: '関東',
+          prefectures: ['茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県']
+        },
+        {
+          name: '中部',
+          prefectures: ['新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県', '静岡県', '愛知県']
+        },
+        {
+          name: '近畿',
+          prefectures: ['三重県', '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県']
+        },
+        {
+          name: '中国',
+          prefectures: ['鳥取県', '島根県', '岡山県', '広島県', '山口県']
+        },
+        {
+          name: '四国',
+          prefectures: ['徳島県', '香川県', '愛媛県', '高知県']
+        },
+        {
+          name: '九州・沖縄',
+          prefectures: ['福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県']
+        }
+      ],
+      recommendedFlyers: [
+        {
+          id: 1,
+          storeName: 'イオン大宮店',
+          image: 'https://via.placeholder.com/300x400?text=Flyer+1',
+          period: '11/15 - 11/21'
+        },
+        {
+          id: 2,
+          storeName: 'マルエツ浦和店',
+          image: 'https://via.placeholder.com/300x400?text=Flyer+2',
+          period: '11/16 - 11/22'
+        },
+        {
+          id: 3,
+          storeName: 'ライフ品川店',
+          image: 'https://via.placeholder.com/300x400?text=Flyer+3',
+          period: '11/17 - 11/23'
+        },
+        {
+          id: 4,
+          storeName: 'サミット渋谷店',
+          image: 'https://via.placeholder.com/300x400?text=Flyer+4',
+          period: '11/18 - 11/24'
+        },
+        {
+          id: 5,
+          storeName: 'オーケー川崎店',
+          image: 'https://via.placeholder.com/300x400?text=Flyer+5',
+          period: '11/19 - 11/25'
+        }
       ]
     }
   },
   computed: {
-    filteredProducts() {
-      let results = [...this.products]
-
-      // カテゴリフィルター
-      if (this.selectedCategory) {
-        results = results.filter(p => p.category === this.selectedCategory)
-      }
-
-      // キーワード検索
-      if (this.searchQuery.trim()) {
-        const query = this.searchQuery.toLowerCase()
-        results = results.filter(p =>
-          p.name.toLowerCase().includes(query) ||
-          p.category.toLowerCase().includes(query)
-        )
-      }
-
-      return results
-    },
-    paginatedProducts() {
-      const start = (this.currentPage - 1) * this.itemsPerPage
-      const end = start + this.itemsPerPage
-      return this.filteredProducts.slice(start, end)
-    },
-    totalPages() {
-      return Math.ceil(this.filteredProducts.length / this.itemsPerPage)
-    },
     popularProductsByCategory() {
       // 表示するカテゴリ（3つ）
       const targetCategories = ['飲料', '生鮮食品', 'お菓子・おつまみ']
@@ -244,6 +295,10 @@ export default {
           products: categoryProducts
         }
       }).filter(cat => cat.products.length > 0) // 商品が存在するカテゴリのみ返す
+    },
+    currentPrefectures() {
+      const region = this.regions.find(r => r.name === this.selectedRegion)
+      return region ? region.prefectures : []
     }
   },
   async mounted() {
@@ -267,14 +322,14 @@ export default {
       }
     },
     performSearch() {
-      this.hasSearched = true
-      this.currentPage = 1
-      // スクロールして検索結果を表示
-      this.$nextTick(() => {
-        const resultsSection = document.querySelector('.search-results')
-        if (resultsSection) {
-          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }
+      // 商品一覧画面に遷移
+      const query = {
+        q: this.searchQuery,
+        category: this.selectedCategory
+      }
+      this.$router.push({
+        path: '/products',
+        query: query
       })
     },
     selectCategory(category) {
@@ -283,22 +338,29 @@ export default {
       } else {
         this.selectedCategory = category
       }
+      // カテゴリ選択後すぐに検索
+      this.performSearch()
     },
-    goToPage(page) {
-      this.currentPage = page
-      // スクロールして検索結果の先頭を表示
-      this.$nextTick(() => {
-        const resultsSection = document.querySelector('.search-results')
-        if (resultsSection) {
-          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }
+    performFlyerSearch() {
+      // 店舗検索結果一覧画面に遷移
+      const query = {
+        q: this.flyerSearchQuery,
+        region: this.selectedRegion,
+        prefecture: this.selectedPrefecture
+      }
+      this.$router.push({
+        path: '/stores',
+        query: query
       })
     },
-    clearSearch() {
-      this.searchQuery = ''
-      this.selectedCategory = ''
-      this.hasSearched = false
-      this.currentPage = 1
+    onRegionChange() {
+      // 地域が変更されたら都道府県をリセット
+      this.selectedPrefecture = ''
+    },
+    openFlyerModal(flyer) {
+      // チラシモーダルを開く（後で実装）
+      console.log('Open flyer modal:', flyer)
+      alert(`${flyer.storeName}のチラシを表示します（実装予定）`)
     },
     scrollToProducts() {
       this.$refs.productsSection?.scrollIntoView({ behavior: 'smooth' })
@@ -502,135 +564,154 @@ export default {
   border-color: white;
 }
 
-/* 検索結果 */
-.search-results {
+/* チラシ検索セクション */
+.flyer-section {
+  margin-bottom: 60px;
+}
+
+.flyer-search-container {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  border-radius: 16px;
+  padding: 40px;
+  color: white;
   margin-bottom: 48px;
-  animation: fadeIn 0.3s ease;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.results-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.flyer-search-title {
+  font-size: 28px;
+  font-weight: bold;
+  text-align: center;
   margin-bottom: 24px;
+}
+
+.flyer-search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.flyer-search-input-wrapper {
+  display: flex;
+  gap: 12px;
+}
+
+.flyer-search-input {
+  flex: 1;
+  padding: 16px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  outline: none;
+}
+
+.region-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.region-select-wrapper {
+  display: flex;
+  gap: 12px;
   flex-wrap: wrap;
-  gap: 16px;
 }
 
-.result-count {
-  font-size: 18px;
-  color: var(--text-secondary);
-  font-weight: normal;
-}
-
-.clear-search {
-  padding: 8px 16px;
-  background-color: transparent;
-  border: 2px solid var(--border-color);
+.region-select,
+.prefecture-select {
+  flex: 1;
+  min-width: 200px;
+  padding: 12px 16px;
+  border: none;
   border-radius: 8px;
-  color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 16px;
+  outline: none;
+  background-color: white;
+  cursor: pointer;
+}
+
+.flyer-search-button {
+  padding: 16px 32px;
+  background-color: white;
+  color: #f5576c;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  white-space: nowrap;
+  align-self: center;
 }
 
-.clear-search:hover {
-  border-color: var(--danger-color);
-  color: var(--danger-color);
+.flyer-search-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.no-results {
-  text-align: center;
-  padding: 60px 20px;
+/* おすすめのチラシ */
+.recommended-flyers {
+  margin-bottom: 48px;
+}
+
+.flyer-carousel {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  padding: 20px 0;
+  scroll-snap-type: x mandatory;
+}
+
+.flyer-carousel::-webkit-scrollbar {
+  height: 8px;
+}
+
+.flyer-carousel::-webkit-scrollbar-track {
+  background: var(--bg-light);
+  border-radius: 4px;
+}
+
+.flyer-carousel::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+.flyer-card {
+  flex-shrink: 0;
+  width: 280px;
   background-color: white;
   border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  scroll-snap-align: start;
 }
 
-.no-results p {
+.flyer-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.flyer-image {
+  width: 100%;
+  height: 350px;
+  object-fit: cover;
+}
+
+.flyer-info {
+  padding: 16px;
+}
+
+.flyer-store-name {
   font-size: 18px;
+  font-weight: bold;
   color: var(--text-primary);
   margin-bottom: 8px;
 }
 
-.no-results-hint {
+.flyer-period {
   font-size: 14px;
   color: var(--text-secondary);
-}
-
-/* ページネーション */
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-  margin-top: 40px;
-  flex-wrap: wrap;
-}
-
-.pagination-btn {
-  padding: 10px 20px;
-  background-color: white;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-  background-color: var(--bg-light);
-}
-
-.pagination-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.page-numbers {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.page-number {
-  min-width: 40px;
-  height: 40px;
-  padding: 8px;
-  background-color: white;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.page-number:hover {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-  background-color: var(--bg-light);
-}
-
-.page-number.active {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-  color: white;
 }
 
 /* 商品セクション */
@@ -718,6 +799,35 @@ export default {
 
   .search-button {
     width: 100%;
+  }
+
+  .flyer-search-container {
+    padding: 24px;
+  }
+
+  .flyer-search-title {
+    font-size: 24px;
+  }
+
+  .flyer-search-input-wrapper {
+    flex-direction: column;
+  }
+
+  .region-select-wrapper {
+    flex-direction: column;
+  }
+
+  .region-select,
+  .prefecture-select {
+    min-width: 100%;
+  }
+
+  .flyer-search-button {
+    width: 100%;
+  }
+
+  .flyer-card {
+    width: 240px;
   }
 
   .cta-buttons {
