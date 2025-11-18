@@ -11,7 +11,9 @@ import AdminDashboard from '@/views/admin/AdminDashboard.vue'
 import AdminArticleList from '@/views/admin/ArticleList.vue'
 import ArticleForm from '@/views/admin/ArticleForm.vue'
 import StoreManagement from '@/views/admin/StoreManagement.vue'
+import StoreForm from '@/views/admin/StoreForm.vue'
 import FlyerManagement from '@/views/admin/FlyerManagement.vue'
+import FlyerForm from '@/views/admin/FlyerForm.vue'
 import AccountManagement from '@/views/admin/AccountManagement.vue'
 
 const routes = [
@@ -86,9 +88,29 @@ const routes = [
     component: StoreManagement
   },
   {
+    path: '/admin/stores/new',
+    name: 'AdminStoreNew',
+    component: StoreForm
+  },
+  {
+    path: '/admin/stores/edit/:id',
+    name: 'AdminStoreEdit',
+    component: StoreForm
+  },
+  {
     path: '/admin/flyers',
     name: 'AdminFlyerManagement',
     component: FlyerManagement
+  },
+  {
+    path: '/admin/flyers/new',
+    name: 'AdminFlyerNew',
+    component: FlyerForm
+  },
+  {
+    path: '/admin/flyers/edit/:id',
+    name: 'AdminFlyerEdit',
+    component: FlyerForm
   },
   {
     path: '/admin/accounts',
