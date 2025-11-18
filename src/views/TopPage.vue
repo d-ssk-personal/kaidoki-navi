@@ -1,12 +1,5 @@
 <template>
   <div class="top-page">
-    <!-- CTAボタン -->
-    <section class="cta-buttons">
-      <button class="btn btn-primary" @click="scrollToProducts">
-        📊 商品を見る
-      </button>
-    </section>
-
     <!-- メインコンテンツエリア -->
     <div class="main-container">
       <!-- メインコンテンツ -->
@@ -15,12 +8,26 @@
         <section class="search-section">
       <div class="search-container">
         <h2 class="search-title">商品を検索</h2>
-        
+
         <div class="search-form">
+          <!-- カテゴリ検索 -->
+          <div class="category-filter">
+            <div class="category-chips">
+              <button
+                v-for="category in categories"
+                :key="category"
+                :class="['category-chip', { active: selectedCategory === category }]"
+                @click="selectCategory(category)"
+              >
+                {{ category }}
+              </button>
+            </div>
+          </div>
+
           <!-- フリーワード検索 -->
           <div class="search-input-wrapper">
-            <input 
-              type="text" 
+            <input
+              type="text"
               v-model="searchQuery"
               placeholder="商品名で検索（例: 牛乳、卵、パンなど）"
               class="search-input"
@@ -29,21 +36,6 @@
             <button class="search-button" @click="performSearch">
               🔍 検索
             </button>
-          </div>
-
-          <!-- カテゴリ検索 -->
-          <div class="category-filter">
-            <label class="filter-label">カテゴリで絞り込み:</label>
-            <div class="category-chips">
-              <button 
-                v-for="category in categories" 
-                :key="category"
-                :class="['category-chip', { active: selectedCategory === category }]"
-                @click="selectCategory(category)"
-              >
-                {{ category }}
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -55,20 +47,8 @@
         <h2 class="flyer-search-title">チラシを検索</h2>
 
         <div class="flyer-search-form">
-          <!-- フリーワード検索 -->
-          <div class="flyer-search-input-wrapper">
-            <input
-              type="text"
-              v-model="flyerSearchQuery"
-              placeholder="店舗名で検索（例: イオン、マルエツなど）"
-              class="flyer-search-input"
-              @keyup.enter="performFlyerSearch"
-            />
-          </div>
-
-          <!-- 地域選択 -->
+          <!-- 地域・都道府県選択 -->
           <div class="region-filter">
-            <label class="filter-label">地域で絞り込み:</label>
             <div class="region-select-wrapper">
               <select v-model="selectedRegion" @change="onRegionChange" class="region-select">
                 <option value="">地域を選択</option>
@@ -78,7 +58,6 @@
               </select>
 
               <select
-                v-if="selectedRegion"
                 v-model="selectedPrefecture"
                 class="prefecture-select"
               >
@@ -94,6 +73,17 @@
             </div>
           </div>
 
+          <!-- フリーワード検索 -->
+          <div class="flyer-search-input-wrapper">
+            <input
+              type="text"
+              v-model="flyerSearchQuery"
+              placeholder="店舗名で検索（例: イオン、マルエツなど）"
+              class="flyer-search-input"
+              @keyup.enter="performFlyerSearch"
+            />
+          </div>
+
           <button class="flyer-search-button" @click="performFlyerSearch">
             🔍 店舗を検索
           </button>
@@ -103,43 +93,53 @@
       <!-- おすすめのチラシ -->
       <div class="recommended-flyers">
         <h2 class="section-title">おすすめのチラシ</h2>
-        <div class="flyer-carousel">
-          <div
-            v-for="flyer in recommendedFlyers"
-            :key="flyer.id"
-            class="flyer-card"
-            @click="openFlyerModal(flyer)"
+        <div class="carousel-container">
+          <button
+            class="carousel-arrow carousel-arrow-left"
+            @click="previousFlyer"
+            :disabled="currentFlyerIndex === 0"
           >
-            <img :src="flyer.image" :alt="flyer.storeName" class="flyer-image" />
-            <div class="flyer-info">
-              <h3 class="flyer-store-name">{{ flyer.storeName }}</h3>
-              <p class="flyer-period">{{ flyer.period }}</p>
+            ◀
+          </button>
+
+          <div class="flyer-carousel">
+            <div
+              v-for="(flyer, index) in recommendedFlyers"
+              :key="flyer.id"
+              class="flyer-card"
+              :class="{ active: index === currentFlyerIndex }"
+              :style="{ transform: `translateX(-${currentFlyerIndex * 100}%)` }"
+              @click="openFlyerModal(flyer)"
+            >
+              <img :src="flyer.image" :alt="flyer.storeName" class="flyer-image" />
+              <div class="flyer-info">
+                <h3 class="flyer-store-name">{{ flyer.storeName }}</h3>
+                <p class="flyer-period">{{ flyer.period }}</p>
+              </div>
             </div>
           </div>
+
+          <button
+            class="carousel-arrow carousel-arrow-right"
+            @click="nextFlyer"
+            :disabled="currentFlyerIndex === recommendedFlyers.length - 1"
+          >
+            ▶
+          </button>
+        </div>
+
+        <!-- カルーセルインジケーター -->
+        <div class="carousel-indicators">
+          <button
+            v-for="(flyer, index) in recommendedFlyers"
+            :key="index"
+            class="indicator"
+            :class="{ active: index === currentFlyerIndex }"
+            @click="goToFlyer(index)"
+          ></button>
         </div>
       </div>
     </section>
-
-      <!-- 人気商品の価格推移 -->
-      <section class="products" ref="productsSection">
-      <h2 class="section-title">人気商品の価格推移</h2>
-
-      <div v-if="loading && !hasSearched" class="loading">
-        <p>読み込み中...</p>
-      </div>
-
-      <div v-else-if="error" class="error">
-        <p>{{ error }}</p>
-      </div>
-
-      <div v-else class="products-grid grid grid-2">
-        <ProductCard
-          v-for="product in products"
-          :key="product.id"
-          :product="product"
-          />
-        </div>
-      </section>
 
       <!-- 家計・物価コラム -->
       <ArticleList :limit="8" />
@@ -168,7 +168,10 @@
               :to="`/item/${product.id}`"
               class="popular-product-item"
             >
-              <span class="popular-product-name">{{ product.name }}</span>
+              <div class="popular-product-details">
+                <span class="popular-product-name">{{ product.name }}</span>
+                <span class="popular-product-store">{{ product.storeName || '－' }}</span>
+              </div>
               <span class="popular-product-price">¥{{ product.lowestPrice }}</span>
             </router-link>
           </div>
@@ -179,7 +182,6 @@
 </template>
 
 <script>
-import ProductCard from '@/components/ProductCard.vue'
 import ArticleList from '@/components/ArticleList.vue'
 import api from '@/services/api'
 import { useMainStore } from '@/store'
@@ -187,7 +189,6 @@ import { useMainStore } from '@/store'
 export default {
   name: 'TopPage',
   components: {
-    ProductCard,
     ArticleList
   },
   data() {
@@ -276,7 +277,8 @@ export default {
           image: 'https://via.placeholder.com/300x400?text=Flyer+5',
           period: '11/19 - 11/25'
         }
-      ]
+      ],
+      currentFlyerIndex: 0
     }
   },
   computed: {
@@ -297,6 +299,9 @@ export default {
       }).filter(cat => cat.products.length > 0) // 商品が存在するカテゴリのみ返す
     },
     currentPrefectures() {
+      if (!this.selectedRegion) {
+        return []
+      }
       const region = this.regions.find(r => r.name === this.selectedRegion)
       return region ? region.prefectures : []
     }
@@ -311,7 +316,7 @@ export default {
         this.error = null
         const data = await api.getProducts()
         this.products = data
-        
+
         const store = useMainStore()
         store.setProducts(data)
       } catch (err) {
@@ -338,8 +343,7 @@ export default {
       } else {
         this.selectedCategory = category
       }
-      // カテゴリ選択後すぐに検索
-      this.performSearch()
+      // カテゴリ選択時は検索を実行しない
     },
     performFlyerSearch() {
       // 店舗検索結果一覧画面に遷移
@@ -362,8 +366,18 @@ export default {
       console.log('Open flyer modal:', flyer)
       alert(`${flyer.storeName}のチラシを表示します（実装予定）`)
     },
-    scrollToProducts() {
-      this.$refs.productsSection?.scrollIntoView({ behavior: 'smooth' })
+    nextFlyer() {
+      if (this.currentFlyerIndex < this.recommendedFlyers.length - 1) {
+        this.currentFlyerIndex++
+      }
+    },
+    previousFlyer() {
+      if (this.currentFlyerIndex > 0) {
+        this.currentFlyerIndex--
+      }
+    },
+    goToFlyer(index) {
+      this.currentFlyerIndex = index
     }
   }
 }
@@ -435,11 +449,26 @@ export default {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
+.popular-product-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  overflow: hidden;
+}
+
 .popular-product-name {
   font-size: 14px;
   color: var(--text-primary);
   font-weight: 500;
-  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popular-product-store {
+  font-size: 12px;
+  color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -450,21 +479,13 @@ export default {
   font-weight: bold;
   color: var(--primary-color);
   margin-left: 8px;
+  white-space: nowrap;
 }
 
 /* メインコンテンツ */
 .main-content {
   flex: 1;
   min-width: 0;
-}
-
-/* CTAボタン */
-.cta-buttons {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 48px;
 }
 
 /* 検索セクション */
@@ -490,6 +511,41 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.category-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-chip {
+  padding: 8px 16px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.category-chip:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.category-chip.active {
+  background-color: white;
+  color: var(--primary-color);
+  border-color: white;
 }
 
 .search-input-wrapper {
@@ -524,46 +580,6 @@ export default {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.category-filter {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.filter-label {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.category-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.category-chip {
-  padding: 8px 16px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  border-radius: 20px;
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.category-chip:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-}
-
-.category-chip.active {
-  background-color: white;
-  color: var(--primary-color);
-  border-color: white;
-}
-
 /* チラシ検索セクション */
 .flyer-section {
   margin-bottom: 60px;
@@ -588,20 +604,6 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 24px;
-}
-
-.flyer-search-input-wrapper {
-  display: flex;
-  gap: 12px;
-}
-
-.flyer-search-input {
-  flex: 1;
-  padding: 16px 20px;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  outline: none;
 }
 
 .region-filter {
@@ -629,6 +631,20 @@ export default {
   cursor: pointer;
 }
 
+.flyer-search-input-wrapper {
+  display: flex;
+  gap: 12px;
+}
+
+.flyer-search-input {
+  flex: 1;
+  padding: 16px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  outline: none;
+}
+
 .flyer-search-button {
   padding: 16px 32px;
   background-color: white;
@@ -648,58 +664,91 @@ export default {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* おすすめのチラシ */
+/* おすすめのチラシ（カルーセル） */
 .recommended-flyers {
   margin-bottom: 48px;
 }
 
-.flyer-carousel {
+.carousel-container {
+  position: relative;
   display: flex;
-  gap: 24px;
-  overflow-x: auto;
-  padding: 20px 0;
-  scroll-snap-type: x mandatory;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.flyer-carousel::-webkit-scrollbar {
-  height: 8px;
+.carousel-arrow {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  background-color: white;
+  border: 2px solid var(--primary-color);
+  border-radius: 50%;
+  color: var(--primary-color);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
 }
 
-.flyer-carousel::-webkit-scrollbar-track {
-  background: var(--bg-light);
-  border-radius: 4px;
+.carousel-arrow:hover:not(:disabled) {
+  background-color: var(--primary-color);
+  color: white;
+  transform: scale(1.1);
 }
 
-.flyer-carousel::-webkit-scrollbar-thumb {
-  background: var(--primary-color);
-  border-radius: 4px;
+.carousel-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: var(--text-secondary);
+  color: var(--text-secondary);
+}
+
+.flyer-carousel {
+  position: relative;
+  width: 100%;
+  height: 450px;
+  overflow: hidden;
+  border-radius: 12px;
 }
 
 .flyer-card {
-  flex-shrink: 0;
-  width: 280px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background-color: white;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  transition: all 0.3s ease;
-  scroll-snap-align: start;
+  transition: transform 0.5s ease, opacity 0.5s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.flyer-card.active {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .flyer-card:hover {
-  transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .flyer-image {
   width: 100%;
-  height: 350px;
+  height: 370px;
   object-fit: cover;
 }
 
 .flyer-info {
-  padding: 16px;
+  padding: 16px 20px;
+  background-color: white;
 }
 
 .flyer-store-name {
@@ -714,9 +763,32 @@ export default {
   color: var(--text-secondary);
 }
 
-/* 商品セクション */
-.products {
-  margin-bottom: 60px;
+/* カルーセルインジケーター */
+.carousel-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.indicator:hover {
+  background-color: #bdbdbd;
+}
+
+.indicator.active {
+  background-color: var(--primary-color);
+  width: 32px;
+  border-radius: 6px;
 }
 
 .section-title {
@@ -725,22 +797,6 @@ export default {
   text-align: center;
   margin-bottom: 40px;
   color: var(--text-primary);
-}
-
-.products-grid {
-  margin-top: 30px;
-}
-
-.loading,
-.error {
-  text-align: center;
-  padding: 40px;
-  font-size: 18px;
-  color: var(--text-secondary);
-}
-
-.error {
-  color: var(--danger-color);
 }
 
 /* CTAセクション */
@@ -762,11 +818,6 @@ export default {
   font-size: 18px;
   margin-bottom: 32px;
   opacity: 0.95;
-}
-
-.btn-large {
-  padding: 16px 32px;
-  font-size: 18px;
 }
 
 @media (max-width: 1024px) {
@@ -826,12 +877,18 @@ export default {
     width: 100%;
   }
 
-  .flyer-card {
-    width: 240px;
+  .carousel-arrow {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
   }
 
-  .cta-buttons {
-    flex-direction: column;
+  .flyer-carousel {
+    height: 400px;
+  }
+
+  .flyer-image {
+    height: 320px;
   }
 
   .cta {
