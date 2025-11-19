@@ -13,7 +13,6 @@
 
       <nav class="nav">
         <router-link to="/top" class="nav-link">ホーム</router-link>
-        <router-link to="/settings" class="nav-link">通知設定</router-link>
         <router-link to="/legal" class="nav-link">利用規約</router-link>
         <router-link to="/for-business" class="nav-link business-link">法人のお客様へ</router-link>
       </nav>
@@ -35,7 +34,6 @@
 
     <div v-if="showMobileMenu" class="mobile-menu">
       <router-link to="/top" class="mobile-nav-link" @click="closeMobileMenu">ホーム</router-link>
-      <router-link to="/settings" class="mobile-nav-link" @click="closeMobileMenu">通知設定</router-link>
       <router-link to="/legal" class="mobile-nav-link" @click="closeMobileMenu">利用規約</router-link>
       <router-link to="/for-business" class="mobile-nav-link" @click="closeMobileMenu">法人のお客様へ</router-link>
       <div class="mobile-menu-divider"></div>

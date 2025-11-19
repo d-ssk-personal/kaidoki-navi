@@ -13,7 +13,7 @@
         <h4 class="footer-heading">サービス</h4>
         <ul class="footer-links">
           <li><router-link to="/top">ホーム</router-link></li>
-          <li><router-link to="/settings">通知設定</router-link></li>
+          <li><router-link to="/mypage">マイページ</router-link></li>
         </ul>
       </div>
       
