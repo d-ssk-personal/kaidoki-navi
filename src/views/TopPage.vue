@@ -43,7 +43,73 @@
 
     <!-- チラシ検索セクション -->
     <section class="flyer-section">
-      <!-- おすすめのチラシ（チラシ検索の上に移動） -->
+      <!-- チラシ検索フォーム -->
+      <div class="flyer-search-container">
+        <h2 class="flyer-search-title">チラシを検索</h2>
+
+        <div class="flyer-search-form">
+          <!-- 地域で検索 -->
+          <div class="search-field">
+            <label class="search-label">地域で検索</label>
+            <div class="region-select-wrapper">
+              <select v-model="selectedRegion" @change="onRegionChange" class="region-select">
+                <option value="">地域を選択</option>
+                <option v-for="region in regions" :key="region.name" :value="region.name">
+                  {{ region.name }}
+                </option>
+              </select>
+
+              <select
+                v-model="selectedPrefecture"
+                class="prefecture-select"
+              >
+                <option value="">都道府県を選択</option>
+                <option
+                  v-for="prefecture in currentPrefectures"
+                  :key="prefecture"
+                  :value="prefecture"
+                >
+                  {{ prefecture }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 店舗名で検索 -->
+          <div class="search-field">
+            <label class="search-label">店舗名で検索</label>
+            <div class="flyer-search-input-wrapper">
+              <input
+                type="text"
+                v-model="flyerSearchQuery"
+                placeholder="例: イオン、マルエツなど"
+                class="flyer-search-input"
+                @keyup.enter="performFlyerSearch"
+              />
+            </div>
+          </div>
+
+          <!-- 住所で検索 -->
+          <div class="search-field">
+            <label class="search-label">住所で検索</label>
+            <div class="flyer-search-input-wrapper">
+              <input
+                type="text"
+                v-model="addressSearchQuery"
+                placeholder="例: さいたま市、渋谷区など"
+                class="flyer-search-input"
+                @keyup.enter="performFlyerSearch"
+              />
+            </div>
+          </div>
+
+          <button class="flyer-search-button" @click="performFlyerSearch">
+            🔍 チラシを検索
+          </button>
+        </div>
+      </div>
+
+      <!-- おすすめのチラシ -->
       <div class="recommended-flyers">
         <h2 class="section-title">おすすめのチラシ</h2>
         <div class="carousel-container">
@@ -92,57 +158,14 @@
           ></button>
         </div>
       </div>
-
-      <div class="flyer-search-container">
-        <h2 class="flyer-search-title">チラシを検索</h2>
-
-        <div class="flyer-search-form">
-          <!-- 地域・都道府県選択 -->
-          <div class="region-filter">
-            <div class="region-select-wrapper">
-              <select v-model="selectedRegion" @change="onRegionChange" class="region-select">
-                <option value="">地域を選択</option>
-                <option v-for="region in regions" :key="region.name" :value="region.name">
-                  {{ region.name }}
-                </option>
-              </select>
-
-              <select
-                v-model="selectedPrefecture"
-                class="prefecture-select"
-              >
-                <option value="">都道府県を選択</option>
-                <option
-                  v-for="prefecture in currentPrefectures"
-                  :key="prefecture"
-                  :value="prefecture"
-                >
-                  {{ prefecture }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <!-- フリーワード検索 -->
-          <div class="flyer-search-input-wrapper">
-            <input
-              type="text"
-              v-model="flyerSearchQuery"
-              placeholder="店舗名で検索（例: イオン、マルエツなど）"
-              class="flyer-search-input"
-              @keyup.enter="performFlyerSearch"
-            />
-          </div>
-
-          <button class="flyer-search-button" @click="performFlyerSearch">
-            🔍 店舗を検索
-          </button>
-        </div>
-      </div>
     </section>
 
       <!-- 家計・物価コラム -->
-      <ArticleList :limit="8" />
+      <section class="articles-section">
+        <h2 class="section-title">家計・物価コラム</h2>
+        <p class="section-subtitle">最新の記事</p>
+        <ArticleList :limit="8" />
+      </section>
 
       <!-- 商品検索トグルボタン（下部に移動） -->
       <div class="product-search-toggle">
@@ -251,6 +274,7 @@ export default {
       ],
       // チラシ検索関連
       flyerSearchQuery: '',
+      addressSearchQuery: '',
       selectedRegion: '',
       selectedPrefecture: '',
       regions: [
@@ -432,6 +456,7 @@ export default {
       // 店舗検索結果一覧画面に遷移
       const query = {
         q: this.flyerSearchQuery,
+        address: this.addressSearchQuery,
         region: this.selectedRegion,
         prefecture: this.selectedPrefecture
       }
@@ -820,13 +845,26 @@ export default {
   font-size: 28px;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 .flyer-search-form {
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.search-field {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.search-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  padding-left: 4px;
 }
 
 .region-filter {
@@ -1018,8 +1056,21 @@ export default {
   font-size: 32px;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 16px;
   color: var(--text-primary);
+}
+
+.section-subtitle {
+  font-size: 16px;
+  text-align: center;
+  margin-bottom: 32px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* コラムセクション */
+.articles-section {
+  margin-bottom: 60px;
 }
 
 /* CTAセクション */
