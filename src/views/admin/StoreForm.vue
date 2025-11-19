@@ -19,6 +19,34 @@
 
     <div class="page-content">
       <form @submit.prevent="handleSubmit" class="store-form">
+        <!-- 企業ID -->
+        <div class="form-group">
+          <label for="companyId" class="form-label required">企業ID</label>
+          <input
+            id="companyId"
+            v-model="form.companyId"
+            type="text"
+            class="form-input"
+            placeholder="自動生成されます"
+            :disabled="true"
+          />
+          <p class="form-hint">企業IDは自動生成されます（変更不可）</p>
+        </div>
+
+        <!-- 店舗ID -->
+        <div class="form-group">
+          <label for="storeId" class="form-label required">店舗ID</label>
+          <input
+            id="storeId"
+            v-model="form.storeId"
+            type="text"
+            class="form-input"
+            placeholder="自動生成されます"
+            :disabled="true"
+          />
+          <p class="form-hint">店舗IDは自動生成されます（変更不可）</p>
+        </div>
+
         <!-- 店舗名 -->
         <div class="form-group">
           <label for="name" class="form-label required">店舗名</label>
@@ -45,38 +73,29 @@
           />
         </div>
 
-        <!-- 地域 -->
+        <!-- 電話番号 -->
         <div class="form-group">
-          <label for="region" class="form-label required">地域</label>
-          <select
-            id="region"
-            v-model="form.region"
-            class="form-select"
-            @change="onRegionChange"
+          <label for="phone" class="form-label required">電話番号</label>
+          <input
+            id="phone"
+            v-model="form.phone"
+            type="tel"
+            class="form-input"
+            placeholder="03-1234-5678"
             required
-          >
-            <option value="">地域を選択</option>
-            <option v-for="region in regions" :key="region.name" :value="region.name">
-              {{ region.name }}
-            </option>
-          </select>
+          />
         </div>
 
-        <!-- 都道府県 -->
+        <!-- 営業時間 -->
         <div class="form-group">
-          <label for="prefecture" class="form-label required">都道府県</label>
-          <select
-            id="prefecture"
-            v-model="form.prefecture"
-            class="form-select"
-            :disabled="!form.region"
-            required
-          >
-            <option value="">都道府県を選択</option>
-            <option v-for="prefecture in currentPrefectures" :key="prefecture" :value="prefecture">
-              {{ prefecture }}
-            </option>
-          </select>
+          <label for="businessHours" class="form-label">営業時間</label>
+          <input
+            id="businessHours"
+            v-model="form.businessHours"
+            type="text"
+            class="form-input"
+            placeholder="例: 9:00-21:00"
+          />
         </div>
 
         <!-- ステータス -->
@@ -138,6 +157,16 @@
 
         <div class="modal-body">
           <div class="confirm-item">
+            <span class="confirm-label">企業ID:</span>
+            <span class="confirm-value">{{ form.companyId || '（自動生成）' }}</span>
+          </div>
+
+          <div class="confirm-item">
+            <span class="confirm-label">店舗ID:</span>
+            <span class="confirm-value">{{ form.storeId || '（自動生成）' }}</span>
+          </div>
+
+          <div class="confirm-item">
             <span class="confirm-label">店舗名:</span>
             <span class="confirm-value">{{ form.name }}</span>
           </div>
@@ -148,13 +177,13 @@
           </div>
 
           <div class="confirm-item">
-            <span class="confirm-label">地域:</span>
-            <span class="confirm-value">{{ form.region }}</span>
+            <span class="confirm-label">電話番号:</span>
+            <span class="confirm-value">{{ form.phone }}</span>
           </div>
 
           <div class="confirm-item">
-            <span class="confirm-label">都道府県:</span>
-            <span class="confirm-value">{{ form.prefecture }}</span>
+            <span class="confirm-label">営業時間:</span>
+            <span class="confirm-value">{{ form.businessHours || '未設定' }}</span>
           </div>
 
           <div class="confirm-item">
@@ -184,49 +213,17 @@ export default {
   data() {
     return {
       form: {
+        companyId: '',
+        storeId: '',
         name: '',
         address: '',
-        region: '',
-        prefecture: '',
+        phone: '',
+        businessHours: '',
         status: 'active'
       },
       showConfirmModal: false,
       errorMessage: '',
-      loading: false,
-      regions: [
-        {
-          name: '北海道',
-          prefectures: ['北海道']
-        },
-        {
-          name: '東北',
-          prefectures: ['青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県']
-        },
-        {
-          name: '関東',
-          prefectures: ['茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県']
-        },
-        {
-          name: '中部',
-          prefectures: ['新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県', '静岡県', '愛知県']
-        },
-        {
-          name: '近畿',
-          prefectures: ['三重県', '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県']
-        },
-        {
-          name: '中国',
-          prefectures: ['鳥取県', '島根県', '岡山県', '広島県', '山口県']
-        },
-        {
-          name: '四国',
-          prefectures: ['徳島県', '香川県', '愛媛県', '高知県']
-        },
-        {
-          name: '九州・沖縄',
-          prefectures: ['福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県']
-        }
-      ]
+      loading: false
     }
   },
   setup() {
@@ -236,11 +233,6 @@ export default {
   computed: {
     isEditMode() {
       return !!this.$route.params.id
-    },
-    currentPrefectures() {
-      if (!this.form.region) return []
-      const region = this.regions.find(r => r.name === this.form.region)
-      return region ? region.prefectures : []
     }
   },
   methods: {
@@ -273,28 +265,32 @@ export default {
         this.showConfirmModal = false
       }
     },
-    onRegionChange() {
-      // 地域が変更されたら都道府県をリセット
-      this.form.prefecture = ''
-    },
     loadStore() {
       if (this.isEditMode) {
         // 実際はAPIから店舗データを取得
         // ダミーデータ
         const dummyStore = {
           id: this.$route.params.id,
+          companyId: 'COMP001',
+          storeId: 'STORE001',
           name: 'イオン大宮店',
           address: '埼玉県さいたま市大宮区桜木町2-3',
-          region: '関東',
-          prefecture: '埼玉県',
+          phone: '048-123-4567',
+          businessHours: '9:00-21:00',
           status: 'active'
         }
 
+        this.form.companyId = dummyStore.companyId
+        this.form.storeId = dummyStore.storeId
         this.form.name = dummyStore.name
         this.form.address = dummyStore.address
-        this.form.region = dummyStore.region
-        this.form.prefecture = dummyStore.prefecture
+        this.form.phone = dummyStore.phone
+        this.form.businessHours = dummyStore.businessHours
         this.form.status = dummyStore.status
+      } else {
+        // 新規作成時は企業IDと店舗IDを空にする
+        this.form.companyId = ''
+        this.form.storeId = ''
       }
     },
     goBack() {
@@ -314,12 +310,6 @@ export default {
     this.adminStore.checkAuth()
     if (!this.adminStore.isAuthenticated) {
       this.$router.push('/admin/login')
-      return
-    }
-    // システム管理者のみアクセス可能
-    if (!this.adminStore.isSystemAdmin) {
-      alert('この機能はシステム管理者のみ利用できます')
-      this.$router.push('/admin')
       return
     }
 
@@ -453,10 +443,16 @@ export default {
   border-color: var(--primary-color);
 }
 
-.form-select:disabled {
+.form-input:disabled {
   background-color: var(--bg-light);
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.form-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 
 .radio-group {

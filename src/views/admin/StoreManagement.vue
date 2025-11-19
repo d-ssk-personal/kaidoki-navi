@@ -22,7 +22,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="店舗名で検索"
+            placeholder="店舗名、住所、電話番号で検索"
             class="search-input"
             @input="performSearch"
           />
@@ -33,32 +33,25 @@
 
         <div class="filter-row">
           <div class="filter-group">
-            <label class="filter-label">地域:</label>
-            <select
-              v-model="filterRegion"
-              class="filter-select"
-              @change="onRegionFilterChange"
-            >
-              <option value="">すべて</option>
-              <option v-for="region in regions" :key="region.name" :value="region.name">
-                {{ region.name }}
-              </option>
-            </select>
+            <label class="filter-label">企業ID:</label>
+            <input
+              v-model="filterCompanyId"
+              type="text"
+              placeholder="企業IDで検索"
+              class="filter-input"
+              @input="performSearch"
+            />
           </div>
 
           <div class="filter-group">
-            <label class="filter-label">都道府県:</label>
-            <select
-              v-model="filterPrefecture"
-              class="filter-select"
-              @change="performSearch"
-              :disabled="!filterRegion"
-            >
-              <option value="">すべて</option>
-              <option v-for="prefecture in currentPrefectures" :key="prefecture" :value="prefecture">
-                {{ prefecture }}
-              </option>
-            </select>
+            <label class="filter-label">店舗ID:</label>
+            <input
+              v-model="filterStoreId"
+              type="text"
+              placeholder="店舗IDで検索"
+              class="filter-input"
+              @input="performSearch"
+            />
           </div>
 
           <div class="filter-group">
@@ -118,11 +111,12 @@
                     @change="toggleSelectAll"
                   />
                 </th>
+                <th class="col-company-id">企業ID</th>
+                <th class="col-store-id">店舗ID</th>
                 <th class="col-name">店舗名</th>
-                <th class="col-region">地域</th>
-                <th class="col-prefecture">都道府県</th>
-                <th class="col-status">ステータス</th>
                 <th class="col-address">住所</th>
+                <th class="col-phone">電話番号</th>
+                <th class="col-status">ステータス</th>
                 <th class="col-actions">操作</th>
               </tr>
             </thead>
@@ -139,22 +133,25 @@
                     @change="toggleSelect(store.id)"
                   />
                 </td>
+                <td class="col-company-id">
+                  {{ store.companyId }}
+                </td>
+                <td class="col-store-id">
+                  {{ store.storeId }}
+                </td>
                 <td class="col-name">
                   {{ store.name }}
                 </td>
-                <td class="col-region">
-                  {{ store.region }}
+                <td class="col-address">
+                  {{ store.address }}
                 </td>
-                <td class="col-prefecture">
-                  {{ store.prefecture }}
+                <td class="col-phone">
+                  {{ store.phone }}
                 </td>
                 <td class="col-status">
                   <span :class="['status-badge', store.status]">
                     {{ store.status === 'active' ? '有効' : '無効' }}
                   </span>
-                </td>
-                <td class="col-address">
-                  {{ store.address }}
                 </td>
                 <td class="col-actions">
                   <button
@@ -189,46 +186,12 @@ export default {
   data() {
     return {
       searchQuery: '',
-      filterRegion: '',
-      filterPrefecture: '',
+      filterCompanyId: '',
+      filterStoreId: '',
       filterStatus: '',
       loading: false,
       selectedIds: [],
-      stores: [],
-      regions: [
-        {
-          name: '北海道',
-          prefectures: ['北海道']
-        },
-        {
-          name: '東北',
-          prefectures: ['青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県']
-        },
-        {
-          name: '関東',
-          prefectures: ['茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県']
-        },
-        {
-          name: '中部',
-          prefectures: ['新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県', '静岡県', '愛知県']
-        },
-        {
-          name: '近畿',
-          prefectures: ['三重県', '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県']
-        },
-        {
-          name: '中国',
-          prefectures: ['鳥取県', '島根県', '岡山県', '広島県', '山口県']
-        },
-        {
-          name: '四国',
-          prefectures: ['徳島県', '香川県', '愛媛県', '高知県']
-        },
-        {
-          name: '九州・沖縄',
-          prefectures: ['福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県']
-        }
-      ]
+      stores: []
     }
   },
   setup() {
@@ -239,20 +202,26 @@ export default {
     filteredStores() {
       let stores = [...this.stores]
 
-      // 店舗名検索
+      // 店舗名、住所、電話番号で検索
       if (this.searchQuery.trim()) {
         const query = this.searchQuery.toLowerCase()
-        stores = stores.filter(s => s.name.toLowerCase().includes(query))
+        stores = stores.filter(s =>
+          s.name.toLowerCase().includes(query) ||
+          s.address.toLowerCase().includes(query) ||
+          s.phone.toLowerCase().includes(query)
+        )
       }
 
-      // 地域フィルター
-      if (this.filterRegion) {
-        stores = stores.filter(s => s.region === this.filterRegion)
+      // 企業IDフィルター
+      if (this.filterCompanyId.trim()) {
+        const query = this.filterCompanyId.toLowerCase()
+        stores = stores.filter(s => s.companyId.toLowerCase().includes(query))
       }
 
-      // 都道府県フィルター
-      if (this.filterPrefecture) {
-        stores = stores.filter(s => s.prefecture === this.filterPrefecture)
+      // 店舗IDフィルター
+      if (this.filterStoreId.trim()) {
+        const query = this.filterStoreId.toLowerCase()
+        stores = stores.filter(s => s.storeId.toLowerCase().includes(query))
       }
 
       // ステータスフィルター
@@ -265,20 +234,11 @@ export default {
     isAllSelected() {
       return this.filteredStores.length > 0 &&
         this.selectedIds.length === this.filteredStores.length
-    },
-    currentPrefectures() {
-      if (!this.filterRegion) return []
-      const region = this.regions.find(r => r.name === this.filterRegion)
-      return region ? region.prefectures : []
     }
   },
   methods: {
     performSearch() {
       // リアルタイム検索のためのメソッド（computedで処理）
-    },
-    onRegionFilterChange() {
-      this.filterPrefecture = ''
-      this.performSearch()
     },
     goToCreatePage() {
       this.$router.push('/admin/stores/new')
@@ -352,42 +312,47 @@ export default {
       this.stores = [
         {
           id: 1,
+          companyId: 'COMP001',
+          storeId: 'STORE001',
           name: 'イオン大宮店',
-          region: '関東',
-          prefecture: '埼玉県',
           address: '埼玉県さいたま市大宮区桜木町2-3',
+          phone: '048-123-4567',
           status: 'active'
         },
         {
           id: 2,
+          companyId: 'COMP001',
+          storeId: 'STORE002',
           name: 'マルエツ浦和店',
-          region: '関東',
-          prefecture: '埼玉県',
           address: '埼玉県さいたま市浦和区高砂1-2-1',
+          phone: '048-234-5678',
           status: 'active'
         },
         {
           id: 3,
+          companyId: 'COMP002',
+          storeId: 'STORE003',
           name: 'ライフ品川店',
-          region: '関東',
-          prefecture: '東京都',
           address: '東京都品川区北品川1-1-1',
+          phone: '03-1111-2222',
           status: 'active'
         },
         {
           id: 4,
+          companyId: 'COMP002',
+          storeId: 'STORE004',
           name: 'サミット渋谷店',
-          region: '関東',
-          prefecture: '東京都',
           address: '東京都渋谷区道玄坂2-3-1',
+          phone: '03-3333-4444',
           status: 'inactive'
         },
         {
           id: 5,
+          companyId: 'COMP003',
+          storeId: 'STORE005',
           name: 'オーケー川崎店',
-          region: '関東',
-          prefecture: '神奈川県',
           address: '神奈川県川崎市川崎区駅前本町1-1',
+          phone: '044-555-6666',
           status: 'active'
         }
       ]
@@ -398,12 +363,6 @@ export default {
     this.adminStore.checkAuth()
     if (!this.adminStore.isAuthenticated) {
       this.$router.push('/admin/login')
-      return
-    }
-    // システム管理者のみアクセス可能
-    if (!this.adminStore.isSystemAdmin) {
-      alert('この機能はシステム管理者のみ利用できます')
-      this.$router.push('/admin')
       return
     }
 
@@ -490,7 +449,7 @@ export default {
 }
 
 .page-content {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 40px 32px;
 }
@@ -562,6 +521,7 @@ export default {
   white-space: nowrap;
 }
 
+.filter-input,
 .filter-select {
   padding: 8px 12px;
   border: 2px solid var(--border-color);
@@ -569,17 +529,19 @@ export default {
   font-size: 14px;
   outline: none;
   transition: border-color 0.3s ease;
+}
+
+.filter-input {
+  min-width: 150px;
+}
+
+.filter-select {
   min-width: 120px;
 }
 
+.filter-input:focus,
 .filter-select:focus {
   border-color: var(--primary-color);
-}
-
-.filter-select:disabled {
-  background-color: var(--bg-light);
-  cursor: not-allowed;
-  opacity: 0.6;
 }
 
 /* 一括操作 */
@@ -680,6 +642,7 @@ export default {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  min-width: 1200px;
 }
 
 .stores-table thead {
@@ -724,17 +687,28 @@ export default {
   cursor: pointer;
 }
 
-.col-name {
-  min-width: 150px;
+.col-company-id {
+  width: 100px;
   font-weight: 500;
 }
 
-.col-region {
+.col-store-id {
   width: 100px;
+  font-weight: 500;
 }
 
-.col-prefecture {
-  width: 100px;
+.col-name {
+  min-width: 180px;
+  font-weight: 500;
+}
+
+.col-address {
+  min-width: 300px;
+  color: var(--text-secondary);
+}
+
+.col-phone {
+  min-width: 140px;
 }
 
 .col-status {
@@ -758,11 +732,6 @@ export default {
 .status-badge.inactive {
   background-color: #f3f4f6;
   color: #374151;
-}
-
-.col-address {
-  max-width: 300px;
-  color: var(--text-secondary);
 }
 
 .col-actions {
@@ -814,6 +783,7 @@ export default {
     width: 100%;
   }
 
+  .filter-input,
   .filter-select {
     flex: 1;
   }
@@ -829,10 +799,6 @@ export default {
 
   .table-container {
     overflow-x: scroll;
-  }
-
-  .stores-table {
-    min-width: 800px;
   }
 }
 </style>
