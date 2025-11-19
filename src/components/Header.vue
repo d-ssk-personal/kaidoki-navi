@@ -15,6 +15,7 @@
         <router-link to="/top" class="nav-link">ホーム</router-link>
         <router-link to="/settings" class="nav-link">通知設定</router-link>
         <router-link to="/legal" class="nav-link">利用規約</router-link>
+        <router-link to="/for-business" class="nav-link business-link">企業の方へ</router-link>
       </nav>
 
       <div class="auth-section">
@@ -36,6 +37,7 @@
       <router-link to="/top" class="mobile-nav-link" @click="closeMobileMenu">ホーム</router-link>
       <router-link to="/settings" class="mobile-nav-link" @click="closeMobileMenu">通知設定</router-link>
       <router-link to="/legal" class="mobile-nav-link" @click="closeMobileMenu">利用規約</router-link>
+      <router-link to="/for-business" class="mobile-nav-link" @click="closeMobileMenu">企業の方へ</router-link>
       <div class="mobile-menu-divider"></div>
       <template v-if="!authStore.isLoggedIn">
         <router-link to="/login" class="mobile-nav-link" @click="closeMobileMenu">ログイン</router-link>
@@ -215,6 +217,17 @@ export default {
   background-color: var(--bg-light);
   color: var(--primary-color);
   text-decoration: none;
+}
+
+.business-link {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white !important;
+  font-weight: 600;
+}
+
+.business-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
 }
 
 /* 認証セクション */
