@@ -185,18 +185,41 @@
         </div>
       </aside>
     </div>
+
+    <!-- チラシモーダル -->
+    <FlyerModal
+      :show="showModal"
+      :store="selectedStore"
+      :active-tab="activeTab"
+      :current-flyer-image-index="currentFlyerImageIndex"
+      :current-recipe-index="currentRecipeIndex"
+      :recipes="recipes"
+      :is-loading-recipe="isLoadingRecipe"
+      @close="closeModal"
+      @generate-recipes="generateRecipes"
+      @switch-tab="switchTab"
+      @previous-flyer-image="previousFlyerImage"
+      @next-flyer-image="nextFlyerImage"
+      @go-to-flyer-image="goToFlyerImage"
+      @previous-recipe="previousRecipe"
+      @next-recipe="nextRecipe"
+      @go-to-recipe="goToRecipe"
+      @share-sns="shareToSNS"
+    />
   </div>
 </template>
 
 <script>
 import ArticleList from '@/components/ArticleList.vue'
+import FlyerModal from '@/components/FlyerModal.vue'
 import api from '@/services/api'
 import { useMainStore } from '@/store'
 
 export default {
   name: 'TopPage',
   components: {
-    ArticleList
+    ArticleList,
+    FlyerModal
   },
   data() {
     return {
@@ -257,36 +280,94 @@ export default {
       recommendedFlyers: [
         {
           id: 1,
+          name: 'イオン大宮店',
           storeName: 'イオン大宮店',
           image: 'https://via.placeholder.com/300x400?text=Flyer+1',
-          period: '11/15 - 11/21'
+          period: '11/15 - 11/21',
+          salePeriod: '11/15 - 11/21',
+          postalCode: '〒330-0846',
+          address: '埼玉県さいたま市大宮区大門町2-90',
+          phone: '048-645-7700',
+          flyerImages: [
+            'https://via.placeholder.com/800x1000?text=AEON+Flyer+1',
+            'https://via.placeholder.com/800x1000?text=AEON+Flyer+2',
+            'https://via.placeholder.com/800x1000?text=AEON+Flyer+3'
+          ]
         },
         {
           id: 2,
+          name: 'マルエツ浦和店',
           storeName: 'マルエツ浦和店',
           image: 'https://via.placeholder.com/300x400?text=Flyer+2',
-          period: '11/16 - 11/22'
+          period: '11/16 - 11/22',
+          salePeriod: '11/16 - 11/22',
+          postalCode: '〒330-0063',
+          address: '埼玉県さいたま市浦和区高砂2-6-18',
+          phone: '048-824-3111',
+          flyerImages: [
+            'https://via.placeholder.com/800x1000?text=Maruetsu+Flyer+1',
+            'https://via.placeholder.com/800x1000?text=Maruetsu+Flyer+2'
+          ]
         },
         {
           id: 3,
+          name: 'ライフ品川店',
           storeName: 'ライフ品川店',
           image: 'https://via.placeholder.com/300x400?text=Flyer+3',
-          period: '11/17 - 11/23'
+          period: '11/17 - 11/23',
+          salePeriod: '11/17 - 11/23',
+          postalCode: '〒108-0075',
+          address: '東京都港区港南2-3-13',
+          phone: '03-5460-1711',
+          flyerImages: [
+            'https://via.placeholder.com/800x1000?text=LIFE+Flyer+1',
+            'https://via.placeholder.com/800x1000?text=LIFE+Flyer+2',
+            'https://via.placeholder.com/800x1000?text=LIFE+Flyer+3',
+            'https://via.placeholder.com/800x1000?text=LIFE+Flyer+4'
+          ]
         },
         {
           id: 4,
+          name: 'サミット渋谷店',
           storeName: 'サミット渋谷店',
           image: 'https://via.placeholder.com/300x400?text=Flyer+4',
-          period: '11/18 - 11/24'
+          period: '11/18 - 11/24',
+          salePeriod: '11/18 - 11/24',
+          postalCode: '〒150-0002',
+          address: '東京都渋谷区渋谷1-12-8',
+          phone: '03-3797-3200',
+          flyerImages: [
+            'https://via.placeholder.com/800x1000?text=Summit+Flyer+1'
+          ]
         },
         {
           id: 5,
+          name: 'オーケー川崎店',
           storeName: 'オーケー川崎店',
           image: 'https://via.placeholder.com/300x400?text=Flyer+5',
-          period: '11/19 - 11/25'
+          period: '11/19 - 11/25',
+          salePeriod: '11/19 - 11/25',
+          postalCode: '〒210-0007',
+          address: '神奈川県川崎市川崎区駅前本町8',
+          phone: '044-245-5511',
+          flyerImages: [
+            'https://via.placeholder.com/800x1000?text=OK+Flyer+1',
+            'https://via.placeholder.com/800x1000?text=OK+Flyer+2',
+            'https://via.placeholder.com/800x1000?text=OK+Flyer+3',
+            'https://via.placeholder.com/800x1000?text=OK+Flyer+4',
+            'https://via.placeholder.com/800x1000?text=OK+Flyer+5'
+          ]
         }
       ],
-      currentFlyerIndex: 0
+      currentFlyerIndex: 0,
+      // モーダル関連
+      showModal: false,
+      selectedStore: null,
+      activeTab: 'flyer',
+      currentFlyerImageIndex: 0,
+      currentRecipeIndex: 0,
+      recipes: [],
+      isLoadingRecipe: false
     }
   },
   computed: {
@@ -370,9 +451,104 @@ export default {
       this.selectedPrefecture = ''
     },
     openFlyerModal(flyer) {
-      // チラシモーダルを開く（後で実装）
-      console.log('Open flyer modal:', flyer)
-      alert(`${flyer.storeName}のチラシを表示します（実装予定）`)
+      this.selectedStore = flyer
+      this.showModal = true
+      this.activeTab = 'flyer'
+      this.currentFlyerImageIndex = 0
+      this.currentRecipeIndex = 0
+      this.recipes = []
+    },
+    closeModal() {
+      this.showModal = false
+      this.selectedStore = null
+      this.activeTab = 'flyer'
+      this.recipes = []
+    },
+    switchTab(tab) {
+      this.activeTab = tab
+    },
+    nextFlyerImage() {
+      if (this.selectedStore && this.currentFlyerImageIndex < this.selectedStore.flyerImages.length - 1) {
+        this.currentFlyerImageIndex++
+      }
+    },
+    previousFlyerImage() {
+      if (this.currentFlyerImageIndex > 0) {
+        this.currentFlyerImageIndex--
+      }
+    },
+    goToFlyerImage(index) {
+      this.currentFlyerImageIndex = index
+    },
+    nextRecipe() {
+      if (this.currentRecipeIndex < this.recipes.length - 1) {
+        this.currentRecipeIndex++
+      }
+    },
+    previousRecipe() {
+      if (this.currentRecipeIndex > 0) {
+        this.currentRecipeIndex--
+      }
+    },
+    goToRecipe(index) {
+      this.currentRecipeIndex = index
+    },
+    async generateRecipes() {
+      // TODO: 後でOpenAI APIを実装
+      this.isLoadingRecipe = true
+      // ダミーデータで3つのレシピを生成
+      await new Promise(resolve => setTimeout(resolve, 1500)) // ローディング演出
+      this.recipes = [
+        {
+          id: 1,
+          title: '豚肉と野菜の炒め物',
+          ingredients: ['豚肉 200g', 'キャベツ 1/4個', 'にんじん 1本', '玉ねぎ 1個', '醤油 大さじ2', 'みりん 大さじ1'],
+          instructions: '1. 野菜を食べやすい大きさに切る\n2. フライパンで豚肉を炒める\n3. 野菜を加えて炒める\n4. 調味料を加えて味を整える',
+          image: 'https://via.placeholder.com/400x300?text=Recipe+1'
+        },
+        {
+          id: 2,
+          title: '鶏肉とブロッコリーのグラタン',
+          ingredients: ['鶏もも肉 250g', 'ブロッコリー 1株', '牛乳 300ml', 'チーズ 100g', '小麦粉 大さじ2', 'バター 30g'],
+          instructions: '1. 鶏肉とブロッコリーを茹でる\n2. ホワイトソースを作る\n3. 耐熱皿に材料を入れる\n4. チーズをのせてオーブンで焼く',
+          image: 'https://via.placeholder.com/400x300?text=Recipe+2'
+        },
+        {
+          id: 3,
+          title: 'サーモンのムニエル',
+          ingredients: ['サーモン 2切れ', 'バター 20g', 'レモン 1個', '塩 少々', 'こしょう 少々', '小麦粉 適量'],
+          instructions: '1. サーモンに塩こしょうをふる\n2. 小麦粉をまぶす\n3. フライパンでバターを溶かす\n4. サーモンを両面焼く\n5. レモンを絞って完成',
+          image: 'https://via.placeholder.com/400x300?text=Recipe+3'
+        }
+      ]
+      this.isLoadingRecipe = false
+      this.activeTab = 'recipe'
+      this.currentRecipeIndex = 0
+    },
+    shareToSNS(platform) {
+      if (this.recipes.length === 0) return
+      const recipe = this.recipes[this.currentRecipeIndex]
+      const text = `${recipe.title} - ${this.selectedStore?.name}のチラシからレシピ提案！`
+      const url = window.location.href
+
+      let shareUrl = ''
+      switch (platform) {
+        case 'twitter':
+          shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`
+          break
+        case 'facebook':
+          shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`
+          break
+        case 'instagram':
+          // Instagramは直接共有できないため、コピー機能を実装
+          alert('Instagram用のテキストをコピーしました！アプリから投稿してください。')
+          navigator.clipboard.writeText(text)
+          return
+      }
+
+      if (shareUrl) {
+        window.open(shareUrl, '_blank', 'width=600,height=400')
+      }
     },
     nextFlyer() {
       if (this.currentFlyerIndex < this.recommendedFlyers.length - 1) {
