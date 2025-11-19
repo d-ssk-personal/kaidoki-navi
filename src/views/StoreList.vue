@@ -91,28 +91,36 @@
     </section>
 
     <!-- チラシモーダル -->
-    <div v-if="showModal" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
-        <button class="modal-close" @click="closeModal">✕</button>
-        <div class="modal-header">
-          <h2 class="modal-title">{{ selectedStore?.name }}</h2>
-          <p class="modal-period">セール期間: {{ selectedStore?.salePeriod }}</p>
-        </div>
-        <div class="modal-body">
-          <img
-            :src="selectedStore?.flyerImage"
-            :alt="selectedStore?.name"
-            class="flyer-image"
-          />
-        </div>
-      </div>
-    </div>
+    <FlyerModal
+      :show="showModal"
+      :store="selectedStore"
+      :active-tab="activeTab"
+      :current-flyer-image-index="currentFlyerImageIndex"
+      :current-recipe-index="currentRecipeIndex"
+      :recipes="recipes"
+      :is-loading-recipe="isLoadingRecipe"
+      @close="closeModal"
+      @generate-recipes="generateRecipes"
+      @switch-tab="switchTab"
+      @previous-flyer-image="previousFlyerImage"
+      @next-flyer-image="nextFlyerImage"
+      @go-to-flyer-image="goToFlyerImage"
+      @previous-recipe="previousRecipe"
+      @next-recipe="nextRecipe"
+      @go-to-recipe="goToRecipe"
+      @share-sns="shareToSNS"
+    />
   </div>
 </template>
 
 <script>
+import FlyerModal from '@/components/FlyerModal.vue'
+
 export default {
   name: 'StoreList',
+  components: {
+    FlyerModal
+  },
   data() {
     return {
       stores: [],
@@ -124,7 +132,13 @@ export default {
       currentPage: 1,
       itemsPerPage: 12,
       showModal: false,
-      selectedStore: null
+      selectedStore: null,
+      // モーダルの新機能用
+      activeTab: 'flyer', // 'flyer' or 'recipe'
+      currentFlyerImageIndex: 0,
+      currentRecipeIndex: 0,
+      recipes: [], // 生成されたレシピ
+      isLoadingRecipe: false
     }
   },
   computed: {
@@ -179,7 +193,14 @@ export default {
           region: '関東',
           prefecture: '埼玉県',
           salePeriod: '11/15 - 11/21',
-          flyerImage: 'https://via.placeholder.com/800x1000?text=AEON+Flyer'
+          postalCode: '〒330-0846',
+          address: '埼玉県さいたま市大宮区大門町2-90',
+          phone: '048-645-7700',
+          flyerImages: [
+            'https://via.placeholder.com/800x1000?text=AEON+Flyer+1',
+            'https://via.placeholder.com/800x1000?text=AEON+Flyer+2',
+            'https://via.placeholder.com/800x1000?text=AEON+Flyer+3'
+          ]
         },
         {
           id: 2,
@@ -188,7 +209,13 @@ export default {
           region: '関東',
           prefecture: '埼玉県',
           salePeriod: '11/16 - 11/22',
-          flyerImage: 'https://via.placeholder.com/800x1000?text=Maruetsu+Flyer'
+          postalCode: '〒330-0063',
+          address: '埼玉県さいたま市浦和区高砂2-6-18',
+          phone: '048-824-3111',
+          flyerImages: [
+            'https://via.placeholder.com/800x1000?text=Maruetsu+Flyer+1',
+            'https://via.placeholder.com/800x1000?text=Maruetsu+Flyer+2'
+          ]
         },
         {
           id: 3,
@@ -197,7 +224,15 @@ export default {
           region: '関東',
           prefecture: '東京都',
           salePeriod: '11/17 - 11/23',
-          flyerImage: 'https://via.placeholder.com/800x1000?text=LIFE+Flyer'
+          postalCode: '〒108-0075',
+          address: '東京都港区港南2-3-13',
+          phone: '03-5460-1711',
+          flyerImages: [
+            'https://via.placeholder.com/800x1000?text=LIFE+Flyer+1',
+            'https://via.placeholder.com/800x1000?text=LIFE+Flyer+2',
+            'https://via.placeholder.com/800x1000?text=LIFE+Flyer+3',
+            'https://via.placeholder.com/800x1000?text=LIFE+Flyer+4'
+          ]
         },
         {
           id: 4,
@@ -206,7 +241,12 @@ export default {
           region: '関東',
           prefecture: '東京都',
           salePeriod: '11/18 - 11/24',
-          flyerImage: 'https://via.placeholder.com/800x1000?text=Summit+Flyer'
+          postalCode: '〒150-0002',
+          address: '東京都渋谷区渋谷1-12-8',
+          phone: '03-3797-3200',
+          flyerImages: [
+            'https://via.placeholder.com/800x1000?text=Summit+Flyer+1'
+          ]
         },
         {
           id: 5,
@@ -215,7 +255,16 @@ export default {
           region: '関東',
           prefecture: '神奈川県',
           salePeriod: '11/19 - 11/25',
-          flyerImage: 'https://via.placeholder.com/800x1000?text=OK+Flyer'
+          postalCode: '〒210-0007',
+          address: '神奈川県川崎市川崎区駅前本町8',
+          phone: '044-245-5511',
+          flyerImages: [
+            'https://via.placeholder.com/800x1000?text=OK+Flyer+1',
+            'https://via.placeholder.com/800x1000?text=OK+Flyer+2',
+            'https://via.placeholder.com/800x1000?text=OK+Flyer+3',
+            'https://via.placeholder.com/800x1000?text=OK+Flyer+4',
+            'https://via.placeholder.com/800x1000?text=OK+Flyer+5'
+          ]
         },
         {
           id: 6,
@@ -224,7 +273,13 @@ export default {
           region: '関東',
           prefecture: '東京都',
           salePeriod: '11/20 - 11/26',
-          flyerImage: 'https://via.placeholder.com/800x1000?text=Ito+Yokado+Flyer'
+          postalCode: '〒160-0022',
+          address: '東京都新宿区新宿3-15-15',
+          phone: '03-3352-1111',
+          flyerImages: [
+            'https://via.placeholder.com/800x1000?text=Ito+Yokado+Flyer+1',
+            'https://via.placeholder.com/800x1000?text=Ito+Yokado+Flyer+2'
+          ]
         }
       ]
       this.loading = false
@@ -240,14 +295,102 @@ export default {
     openFlyerModal(store) {
       this.selectedStore = store
       this.showModal = true
-      // モーダルが開いているときはスクロールを無効化
-      document.body.style.overflow = 'hidden'
+      this.activeTab = 'flyer'
+      this.currentFlyerImageIndex = 0
+      this.currentRecipeIndex = 0
+      this.recipes = []
     },
     closeModal() {
       this.showModal = false
       this.selectedStore = null
-      // モーダルを閉じたらスクロールを有効化
-      document.body.style.overflow = ''
+      this.activeTab = 'flyer'
+      this.recipes = []
+    },
+    switchTab(tab) {
+      this.activeTab = tab
+    },
+    nextFlyerImage() {
+      if (this.selectedStore && this.currentFlyerImageIndex < this.selectedStore.flyerImages.length - 1) {
+        this.currentFlyerImageIndex++
+      }
+    },
+    previousFlyerImage() {
+      if (this.currentFlyerImageIndex > 0) {
+        this.currentFlyerImageIndex--
+      }
+    },
+    goToFlyerImage(index) {
+      this.currentFlyerImageIndex = index
+    },
+    nextRecipe() {
+      if (this.currentRecipeIndex < this.recipes.length - 1) {
+        this.currentRecipeIndex++
+      }
+    },
+    previousRecipe() {
+      if (this.currentRecipeIndex > 0) {
+        this.currentRecipeIndex--
+      }
+    },
+    goToRecipe(index) {
+      this.currentRecipeIndex = index
+    },
+    async generateRecipes() {
+      // TODO: 後でOpenAI APIを実装
+      this.isLoadingRecipe = true
+      // ダミーデータで3つのレシピを生成
+      await new Promise(resolve => setTimeout(resolve, 1500)) // ローディング演出
+      this.recipes = [
+        {
+          id: 1,
+          title: '豚肉と野菜の炒め物',
+          ingredients: ['豚肉 200g', 'キャベツ 1/4個', 'にんじん 1本', '玉ねぎ 1個', '醤油 大さじ2', 'みりん 大さじ1'],
+          instructions: '1. 野菜を食べやすい大きさに切る\n2. フライパンで豚肉を炒める\n3. 野菜を加えて炒める\n4. 調味料を加えて味を整える',
+          image: 'https://via.placeholder.com/400x300?text=Recipe+1'
+        },
+        {
+          id: 2,
+          title: '鶏肉とブロッコリーのグラタン',
+          ingredients: ['鶏もも肉 250g', 'ブロッコリー 1株', '牛乳 300ml', 'チーズ 100g', '小麦粉 大さじ2', 'バター 30g'],
+          instructions: '1. 鶏肉とブロッコリーを茹でる\n2. ホワイトソースを作る\n3. 耐熱皿に材料を入れる\n4. チーズをのせてオーブンで焼く',
+          image: 'https://via.placeholder.com/400x300?text=Recipe+2'
+        },
+        {
+          id: 3,
+          title: 'サーモンのムニエル',
+          ingredients: ['サーモン 2切れ', 'バター 20g', 'レモン 1個', '塩 少々', 'こしょう 少々', '小麦粉 適量'],
+          instructions: '1. サーモンに塩こしょうをふる\n2. 小麦粉をまぶす\n3. フライパンでバターを溶かす\n4. サーモンを両面焼く\n5. レモンを絞って完成',
+          image: 'https://via.placeholder.com/400x300?text=Recipe+3'
+        }
+      ]
+      this.isLoadingRecipe = false
+      this.activeTab = 'recipe'
+      this.currentRecipeIndex = 0
+    },
+    shareToSNS(platform) {
+      if (this.recipes.length === 0) return
+      const recipe = this.recipes[this.currentRecipeIndex]
+      const text = `${recipe.title} - ${this.selectedStore?.name}のチラシからレシピ提案！`
+      const url = window.location.href
+
+      let shareUrl = ''
+      switch (platform) {
+        case 'twitter':
+          shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`
+          break
+        case 'facebook':
+          shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`
+          break
+        case 'instagram':
+          // Instagramは直接共有できないため、コピー機能を実装
+          alert('Instagram用のテキストをコピーしました！アプリから投稿してください。')
+          navigator.clipboard.writeText(text)
+          return
+      }
+
+      if (shareUrl) {
+        window.open(shareUrl, '_blank', 'width=600,height=400')
+      }
     }
   }
 }
@@ -531,79 +674,6 @@ export default {
   color: white;
 }
 
-/* モーダル */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.modal-content {
-  background-color: white;
-  border-radius: 16px;
-  max-width: 900px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-}
-
-.modal-close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 40px;
-  height: 40px;
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  font-size: 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 10;
-}
-
-.modal-close:hover {
-  background-color: rgba(0, 0, 0, 0.7);
-  transform: scale(1.1);
-}
-
-.modal-header {
-  padding: 32px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.modal-title {
-  font-size: 28px;
-  font-weight: bold;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.modal-period {
-  font-size: 16px;
-  color: var(--text-secondary);
-}
-
-.modal-body {
-  padding: 32px;
-}
-
-.modal-body .flyer-image {
-  width: 100%;
-  height: auto;
-  border-radius: 8px;
-}
-
 @media (max-width: 768px) {
   .store-list {
     padding: 16px;
@@ -633,18 +703,6 @@ export default {
 
   .stores-grid {
     grid-template-columns: 1fr;
-  }
-
-  .modal-header {
-    padding: 24px;
-  }
-
-  .modal-body {
-    padding: 24px;
-  }
-
-  .modal-title {
-    font-size: 22px;
   }
 }
 </style>

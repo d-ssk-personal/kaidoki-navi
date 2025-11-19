@@ -6,6 +6,9 @@ import ItemDetail from '@/views/ItemDetail.vue'
 import ArticleDetail from '@/views/ArticleDetail.vue'
 import Settings from '@/views/Settings.vue'
 import Legal from '@/views/Legal.vue'
+import Login from '@/views/Login.vue'
+import MyPage from '@/views/MyPage.vue'
+import ForBusiness from '@/views/ForBusiness.vue'
 import AdminLogin from '@/views/admin/AdminLogin.vue'
 import AdminDashboard from '@/views/admin/AdminDashboard.vue'
 import AdminArticleList from '@/views/admin/ArticleList.vue'
@@ -55,6 +58,21 @@ const routes = [
     path: '/legal',
     name: 'Legal',
     component: Legal
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: Login
+  },
+  {
+    path: '/mypage',
+    name: 'MyPage',
+    component: MyPage
+  },
+  {
+    path: '/for-business',
+    name: 'ForBusiness',
+    component: ForBusiness
   },
   // 管理画面
   {
