@@ -161,11 +161,7 @@
     </section>
 
       <!-- 家計・物価コラム -->
-      <section class="articles-section">
-        <h2 class="section-title">家計・物価コラム</h2>
-        <p class="section-subtitle">最新の記事</p>
-        <ArticleList :limit="8" />
-      </section>
+      <ArticleList :limit="8" />
 
       <!-- 商品検索トグルボタン（下部に移動） -->
       <div class="product-search-toggle">
@@ -191,6 +187,8 @@
             🔍
           </button>
         </div>
+
+        <p class="latest-articles-label">最新の記事</p>
 
         <div class="article-categories">
           <h3 class="article-category-title">カテゴリ</h3>
@@ -665,6 +663,16 @@ export default {
   transform: scale(1.05);
 }
 
+/* 最新の記事ラベル */
+.latest-articles-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-bottom: 24px;
+  padding-left: 8px;
+  text-align: center;
+}
+
 /* コラムカテゴリ */
 .article-categories {
   margin-bottom: 24px;
@@ -1056,21 +1064,8 @@ export default {
   font-size: 32px;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 40px;
   color: var(--text-primary);
-}
-
-.section-subtitle {
-  font-size: 16px;
-  text-align: center;
-  margin-bottom: 32px;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-/* コラムセクション */
-.articles-section {
-  margin-bottom: 60px;
 }
 
 /* CTAセクション */
