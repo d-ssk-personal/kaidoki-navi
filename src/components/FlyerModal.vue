@@ -5,7 +5,17 @@
       <!-- ヘッダー -->
       <div class="modal-header">
         <div class="modal-header-left">
-          <h2 class="modal-title">{{ store?.name }}</h2>
+          <div class="modal-title-row">
+            <h2 class="modal-title">{{ store?.name }}</h2>
+            <button
+              v-if="authStore.isLoggedIn"
+              class="favorite-star-btn"
+              @click="toggleFavorite"
+              :title="isFavorite ? 'お気に入りから削除' : 'お気に入りに追加'"
+            >
+              {{ isFavorite ? '⭐' : '☆' }}
+            </button>
+          </div>
           <p class="modal-period">セール期間: {{ store?.salePeriod }}</p>
         </div>
         <div class="modal-header-right">
@@ -184,6 +194,8 @@
 </template>
 
 <script>
+import { useAuthStore } from '@/store/auth'
+
 export default {
   name: 'FlyerModal',
   props: {
@@ -228,6 +240,22 @@ export default {
     'go-to-recipe',
     'share-sns'
   ],
+  setup() {
+    const authStore = useAuthStore()
+    return { authStore }
+  },
+  computed: {
+    isFavorite() {
+      return this.store?.id ? this.authStore.isFavorite(this.store.id) : false
+    }
+  },
+  methods: {
+    toggleFavorite() {
+      if (this.store?.id) {
+        this.authStore.toggleFavorite(this.store.id)
+      }
+    }
+  },
   watch: {
     show(newVal) {
       // モーダルが開いているときはスクロールを無効化
@@ -288,11 +316,32 @@ export default {
   min-width: 200px;
 }
 
+.modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
 .modal-title {
   font-size: 24px;
   font-weight: bold;
   color: var(--text-primary);
-  margin-bottom: 6px;
+}
+
+.favorite-star-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.favorite-star-btn:hover {
+  transform: scale(1.2);
 }
 
 .modal-period {
@@ -435,9 +484,6 @@ export default {
 
 .flyer-carousel-container {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 16px;
 }
 
 .flyer-carousel {
@@ -537,9 +583,6 @@ export default {
 
 .recipe-carousel-container {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 16px;
 }
 
 .recipe-carousel {
@@ -628,7 +671,10 @@ export default {
 
 /* カルーセルの矢印 */
 .carousel-arrow {
-  flex-shrink: 0;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
   width: 48px;
   height: 48px;
   background-color: white;
@@ -641,6 +687,14 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.carousel-arrow.left {
+  left: -64px;
+}
+
+.carousel-arrow.right {
+  right: -64px;
 }
 
 .carousel-arrow:hover:not(:disabled) {
@@ -736,6 +790,10 @@ export default {
     font-size: 20px;
   }
 
+  .favorite-star-btn {
+    font-size: 24px;
+  }
+
   .modal-period {
     font-size: 13px;
   }
@@ -748,6 +806,14 @@ export default {
     width: 40px;
     height: 40px;
     font-size: 16px;
+  }
+
+  .carousel-arrow.left {
+    left: 8px;
+  }
+
+  .carousel-arrow.right {
+    right: 8px;
   }
 
   .store-info-section {

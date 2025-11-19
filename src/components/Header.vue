@@ -17,6 +17,16 @@
         <router-link to="/legal" class="nav-link">利用規約</router-link>
       </nav>
 
+      <div class="auth-section">
+        <template v-if="!authStore.isLoggedIn">
+          <router-link to="/login" class="auth-btn login-btn">ログイン</router-link>
+        </template>
+        <template v-else>
+          <router-link to="/mypage" class="auth-btn mypage-btn">マイページ</router-link>
+          <button class="auth-btn logout-btn" @click="handleLogout">ログアウト</button>
+        </template>
+      </div>
+
       <button class="mobile-menu-btn" @click="toggleMobileMenu">
         <span class="menu-icon">☰</span>
       </button>
@@ -26,6 +36,14 @@
       <router-link to="/top" class="mobile-nav-link" @click="closeMobileMenu">ホーム</router-link>
       <router-link to="/settings" class="mobile-nav-link" @click="closeMobileMenu">通知設定</router-link>
       <router-link to="/legal" class="mobile-nav-link" @click="closeMobileMenu">利用規約</router-link>
+      <div class="mobile-menu-divider"></div>
+      <template v-if="!authStore.isLoggedIn">
+        <router-link to="/login" class="mobile-nav-link" @click="closeMobileMenu">ログイン</router-link>
+      </template>
+      <template v-else>
+        <router-link to="/mypage" class="mobile-nav-link" @click="closeMobileMenu">マイページ</router-link>
+        <button class="mobile-nav-link logout-link" @click="handleLogout">ログアウト</button>
+      </template>
     </div>
 
     <!-- 買いどきナビとは?モーダル -->
@@ -93,12 +111,15 @@
 </template>
 
 <script>
+import { useAuthStore } from '@/store/auth'
+
 export default {
   name: 'Header',
   data() {
     return {
       showMobileMenu: false,
-      showAboutModal: false
+      showAboutModal: false,
+      authStore: useAuthStore()
     }
   },
   methods: {
@@ -107,6 +128,10 @@ export default {
     },
     closeMobileMenu() {
       this.showMobileMenu = false
+    },
+    handleLogout() {
+      this.authStore.logout()
+      this.$router.push('/top')
     }
   }
 }
@@ -192,6 +217,62 @@ export default {
   text-decoration: none;
 }
 
+/* 認証セクション */
+.auth-section {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.auth-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.login-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+}
+
+.login-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.mypage-btn {
+  background-color: white;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+}
+
+.mypage-btn:hover {
+  background-color: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.logout-btn {
+  background-color: white;
+  color: var(--text-secondary);
+  border: 2px solid var(--border-color);
+}
+
+.logout-btn:hover {
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+  transform: translateY(-2px);
+}
+
 .mobile-menu-btn {
   display: none;
   background: none;
@@ -219,6 +300,20 @@ export default {
   background-color: white;
   color: var(--primary-color);
   text-decoration: none;
+}
+
+.mobile-menu-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 8px 0;
+}
+
+.logout-link {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 16px;
 }
 
 /* モーダル */
@@ -396,6 +491,10 @@ export default {
 
 @media (max-width: 768px) {
   .nav {
+    display: none;
+  }
+
+  .auth-section {
     display: none;
   }
 
