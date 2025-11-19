@@ -2,10 +2,10 @@
   <footer class="footer">
     <div class="footer-content">
       <div class="footer-section">
-        <h3 class="footer-title">買いどきナビ</h3>
+        <h3 class="footer-title">チラシ キッチン</h3>
         <p class="footer-description">
-          価格変動を見逃さない。<br>
-          賢い買い物で家計を守る。
+          チラシからレシピを提案。<br>
+          生活に役立つコラムも毎日配信。
         </p>
       </div>
       
@@ -13,7 +13,7 @@
         <h4 class="footer-heading">サービス</h4>
         <ul class="footer-links">
           <li><router-link to="/top">ホーム</router-link></li>
-          <li><router-link to="/settings">通知設定</router-link></li>
+          <li><router-link to="/mypage">マイページ</router-link></li>
         </ul>
       </div>
       
@@ -25,10 +25,18 @@
           <li><router-link to="/legal">お問い合わせ</router-link></li>
         </ul>
       </div>
+
+      <div class="footer-section">
+        <h4 class="footer-heading">法人のお客様</h4>
+        <ul class="footer-links">
+          <li><router-link to="/for-business">サービス紹介</router-link></li>
+          <li><router-link to="/for-business#contact">お問い合わせ</router-link></li>
+        </ul>
+      </div>
     </div>
     
     <div class="footer-bottom">
-      <p>&copy; 2025 買い時ナビ. All rights reserved.</p>
+      <p>&copy; 2025 チラシ キッチン. All rights reserved.</p>
     </div>
   </footer>
 </template>

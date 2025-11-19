@@ -5,7 +5,7 @@
         <div class="login-header">
           <div class="logo">
             <span class="logo-icon">💰</span>
-            <span class="logo-text">買いどきナビ</span>
+            <span class="logo-text">チラシ キッチン</span>
           </div>
           <h1 class="login-title">ログイン</h1>
           <p class="login-subtitle">アカウントにログインしてください</p>

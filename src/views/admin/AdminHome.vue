@@ -7,7 +7,7 @@
 
     <div class="admin-header">
       <h1 class="admin-title">管理者ダッシュボード</h1>
-      <p class="admin-subtitle">買いどきナビ管理画面</p>
+      <p class="admin-subtitle">チラシ キッチン管理画面</p>
       <button class="logout-button" @click="handleLogout">
         ログアウト
       </button>

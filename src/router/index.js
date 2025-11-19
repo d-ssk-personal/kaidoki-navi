@@ -4,7 +4,6 @@ import ProductList from '@/views/ProductList.vue'
 import StoreList from '@/views/StoreList.vue'
 import ItemDetail from '@/views/ItemDetail.vue'
 import ArticleDetail from '@/views/ArticleDetail.vue'
-import Settings from '@/views/Settings.vue'
 import Legal from '@/views/Legal.vue'
 import Login from '@/views/Login.vue'
 import MyPage from '@/views/MyPage.vue'
@@ -48,11 +47,6 @@ const routes = [
     path: '/article/:id',
     name: 'ArticleDetail',
     component: ArticleDetail
-  },
-  {
-    path: '/settings',
-    name: 'Settings',
-    component: Settings
   },
   {
     path: '/legal',
