@@ -39,6 +39,19 @@
           </p>
         </router-link>
 
+        <!-- 企業管理 - システム管理者のみ -->
+        <router-link
+          v-if="adminStore.isSystemAdmin"
+          to="/admin/companies"
+          class="menu-card"
+        >
+          <div class="menu-icon">🏢</div>
+          <h3 class="menu-title">企業管理</h3>
+          <p class="menu-description">
+            企業情報の管理を行います
+          </p>
+        </router-link>
+
         <!-- チラシ管理 - システム管理者と店舗ユーザー -->
         <router-link
           to="/admin/flyers"

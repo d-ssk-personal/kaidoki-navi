@@ -14,6 +14,8 @@ import AdminArticleList from '@/views/admin/ArticleList.vue'
 import ArticleForm from '@/views/admin/ArticleForm.vue'
 import StoreManagement from '@/views/admin/StoreManagement.vue'
 import StoreForm from '@/views/admin/StoreForm.vue'
+import CompanyManagement from '@/views/admin/CompanyManagement.vue'
+import CompanyForm from '@/views/admin/CompanyForm.vue'
 import FlyerManagement from '@/views/admin/FlyerManagement.vue'
 import FlyerForm from '@/views/admin/FlyerForm.vue'
 import AccountManagement from '@/views/admin/AccountManagement.vue'
@@ -108,6 +110,21 @@ const routes = [
     path: '/admin/stores/edit/:id',
     name: 'AdminStoreEdit',
     component: StoreForm
+  },
+  {
+    path: '/admin/companies',
+    name: 'AdminCompanyManagement',
+    component: CompanyManagement
+  },
+  {
+    path: '/admin/companies/new',
+    name: 'AdminCompanyNew',
+    component: CompanyForm
+  },
+  {
+    path: '/admin/companies/edit/:id',
+    name: 'AdminCompanyEdit',
+    component: CompanyForm
   },
   {
     path: '/admin/flyers',
