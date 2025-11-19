@@ -484,14 +484,19 @@ export default {
 
 .flyer-carousel-container {
   position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
 }
 
 .flyer-carousel {
   position: relative;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   height: 600px;
   overflow: hidden;
   border-radius: 12px;
+  order: 0;
 }
 
 .flyer-slide {
@@ -583,13 +588,18 @@ export default {
 
 .recipe-carousel-container {
   position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
 }
 
 .recipe-carousel {
   position: relative;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   min-height: 500px;
   overflow: hidden;
+  order: 0;
 }
 
 .recipe-slide {
@@ -671,10 +681,9 @@ export default {
 
 /* カルーセルの矢印 */
 .carousel-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
+  position: sticky;
+  top: 300px;
+  flex-shrink: 0;
   width: 48px;
   height: 48px;
   background-color: white;
@@ -687,14 +696,15 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 10;
 }
 
 .carousel-arrow.left {
-  left: -64px;
+  order: -1;
 }
 
 .carousel-arrow.right {
-  right: -64px;
+  order: 1;
 }
 
 .carousel-arrow:hover:not(:disabled) {
@@ -802,7 +812,15 @@ export default {
     height: 400px;
   }
 
+  .flyer-carousel-container,
+  .recipe-carousel-container {
+    gap: 0;
+  }
+
   .carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
     width: 40px;
     height: 40px;
     font-size: 16px;
@@ -810,10 +828,12 @@ export default {
 
   .carousel-arrow.left {
     left: 8px;
+    order: 0;
   }
 
   .carousel-arrow.right {
     right: 8px;
+    order: 0;
   }
 
   .store-info-section {
