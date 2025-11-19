@@ -4,7 +4,7 @@
       <div class="login-card">
         <div class="login-header">
           <h1 class="login-title">管理者ログイン</h1>
-          <p class="login-subtitle">買いどきナビ 管理画面</p>
+          <p class="login-subtitle">チラシ キッチン 管理画面</p>
         </div>
 
         <form @submit.prevent="handleLogin" class="login-form">

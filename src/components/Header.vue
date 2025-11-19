@@ -4,10 +4,10 @@
       <div class="logo-section">
         <router-link to="/top" class="logo">
           <span class="logo-icon">💰</span>
-          <span class="logo-text">買いどきナビ</span>
+          <span class="logo-text">チラシ キッチン</span>
         </router-link>
         <button class="about-btn" @click="showAboutModal = true">
-          ❓ 買いどきナビとは?
+          ❓ チラシ キッチンとは?
         </button>
       </div>
 
@@ -15,7 +15,7 @@
         <router-link to="/top" class="nav-link">ホーム</router-link>
         <router-link to="/settings" class="nav-link">通知設定</router-link>
         <router-link to="/legal" class="nav-link">利用規約</router-link>
-        <router-link to="/for-business" class="nav-link business-link">企業の方へ</router-link>
+        <router-link to="/for-business" class="nav-link business-link">法人のお客様へ</router-link>
       </nav>
 
       <div class="auth-section">
@@ -37,7 +37,7 @@
       <router-link to="/top" class="mobile-nav-link" @click="closeMobileMenu">ホーム</router-link>
       <router-link to="/settings" class="mobile-nav-link" @click="closeMobileMenu">通知設定</router-link>
       <router-link to="/legal" class="mobile-nav-link" @click="closeMobileMenu">利用規約</router-link>
-      <router-link to="/for-business" class="mobile-nav-link" @click="closeMobileMenu">企業の方へ</router-link>
+      <router-link to="/for-business" class="mobile-nav-link" @click="closeMobileMenu">法人のお客様へ</router-link>
       <div class="mobile-menu-divider"></div>
       <template v-if="!authStore.isLoggedIn">
         <router-link to="/login" class="mobile-nav-link" @click="closeMobileMenu">ログイン</router-link>
@@ -53,17 +53,17 @@
       <div class="modal-content" @click.stop>
         <button class="modal-close" @click="showAboutModal = false">✕</button>
 
-        <h2 class="modal-title">買いどきナビとは?</h2>
+        <h2 class="modal-title">チラシ キッチンとは?</h2>
 
         <div class="modal-body">
           <div class="modal-hero">
             <p class="modal-description">
-              価格変動を見逃さない<br>
-              賢い買い物で家計を守る
+              チラシから献立を提案<br>
+              毎日のお買い物をもっと楽しく
             </p>
             <p class="modal-subdescription">
-              2025年問題で物価高騰が続く今、買いどきナビが<br>
-              商品の値上げ・値下げをリアルタイムでお知らせします
+              提携スーパーのチラシを検索して、お得な食材から<br>
+              AIが自動でレシピを提案。生活に役立つコラムも毎日配信
             </p>
           </div>
 
@@ -71,31 +71,31 @@
 
           <div class="features-list">
             <div class="feature-item">
-              <div class="feature-icon">📊</div>
+              <div class="feature-icon">📰</div>
               <div class="feature-content">
-                <h4 class="feature-title">価格推移の可視化</h4>
+                <h4 class="feature-title">チラシ検索</h4>
                 <p class="feature-description">
-                  過去30日〜180日の価格変動をグラフで確認。買い時を逃しません。
+                  提携スーパーのチラシを一括検索。お気に入りの店舗を登録して、新しいチラシをすぐチェック。
                 </p>
               </div>
             </div>
 
             <div class="feature-item">
-              <div class="feature-icon">🤖</div>
+              <div class="feature-icon">🍳</div>
               <div class="feature-content">
-                <h4 class="feature-title">AI要約</h4>
+                <h4 class="feature-title">AIレシピ提案</h4>
                 <p class="feature-description">
-                  最安値情報や値下げ傾向をAIが分析。節約のヒントをお届けします。
+                  チラシのお得な食材から、AIが自動で料理レシピを提案。献立に悩む時間を削減できます。
                 </p>
               </div>
             </div>
 
             <div class="feature-item">
-              <div class="feature-icon">🔔</div>
+              <div class="feature-icon">📝</div>
               <div class="feature-content">
-                <h4 class="feature-title">リアルタイム通知</h4>
+                <h4 class="feature-title">生活コラム配信</h4>
                 <p class="feature-description">
-                  値上げ・値下げを即座にお知らせ。PWA通知で受け取れます。
+                  物価や家計など、生活に役立つコラムを毎日配信。賢い買い物をサポートします。
                 </p>
               </div>
             </div>

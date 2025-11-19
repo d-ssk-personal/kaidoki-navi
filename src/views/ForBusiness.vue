@@ -9,7 +9,7 @@
         </h1>
         <p class="hero-subtitle">
           チラシからレシピを提案し、SNSで拡散。<br>
-          新しい集客の形を、買いどきナビで。
+          新しい集客の形を、チラシ キッチンで。
         </p>
         <div class="hero-badges">
           <div class="badge">
@@ -32,7 +32,7 @@
     <!-- 特徴セクション -->
     <section class="features-section">
       <div class="container">
-        <h2 class="section-title">買いどきナビの特徴</h2>
+        <h2 class="section-title">チラシ キッチンの特徴</h2>
         <p class="section-subtitle">従来のチラシ掲載にはない、新しい価値を提供します</p>
 
         <div class="features-grid">

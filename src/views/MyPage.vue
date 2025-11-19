@@ -287,7 +287,7 @@ export default {
       const recipe = this.recipes[this.currentRecipeIndex]
       if (!recipe) return
 
-      const text = `${this.selectedStore.name}のチラシから「${recipe.title}」のレシピを提案してもらいました！ #買いどきナビ`
+      const text = `${this.selectedStore.name}のチラシから「${recipe.title}」のレシピを提案してもらいました！ #チラシキッチン`
       const url = window.location.origin
 
       switch (platform) {

@@ -4,13 +4,6 @@
     <div class="main-container">
       <!-- メインコンテンツ -->
       <main class="main-content">
-        <!-- 商品検索トグルボタン -->
-        <div class="product-search-toggle">
-          <button class="toggle-button" @click="showProductSearch = !showProductSearch">
-            {{ showProductSearch ? '商品検索を非表示' : '商品検索を表示' }}
-          </button>
-        </div>
-
         <!-- 検索フォーム（表示/非表示切り替え可能） -->
         <section v-if="showProductSearch" class="search-section">
       <div class="search-container">
@@ -151,36 +144,42 @@
       <!-- 家計・物価コラム -->
       <ArticleList :limit="8" />
 
-      <!-- CTAセクション -->
-      <section class="cta">
-      <div class="cta-content">
-        <h2 class="cta-title">今すぐ始めよう</h2>
-        <p class="cta-description">
-          無料で価格変動をチェック。賢い買い物で家計を守りましょう。
-        </p>
-        </div>
-      </section>
+      <!-- 商品検索トグルボタン（下部に移動） -->
+      <div class="product-search-toggle">
+        <button class="toggle-button" @click="showProductSearch = !showProductSearch">
+          {{ showProductSearch ? '商品検索を非表示' : '商品検索を表示' }}
+        </button>
+      </div>
       </main>
 
       <!-- サイドバー -->
       <aside class="sidebar">
-        <h2 class="sidebar-title">人気商品</h2>
+        <h2 class="sidebar-title">コラム検索</h2>
 
-        <div v-for="categoryData in popularProductsByCategory" :key="categoryData.category" class="popular-category">
-          <h3 class="popular-category-title">{{ categoryData.category }}</h3>
-          <div class="popular-products-list">
-            <router-link
-              v-for="product in categoryData.products"
-              :key="product.id"
-              :to="`/item/${product.id}`"
-              class="popular-product-item"
+        <div class="article-search-box">
+          <input
+            type="text"
+            v-model="articleSearchQuery"
+            placeholder="キーワードで検索"
+            class="article-search-input"
+            @keyup.enter="performArticleSearch"
+          />
+          <button class="article-search-button" @click="performArticleSearch">
+            🔍
+          </button>
+        </div>
+
+        <div class="article-categories">
+          <h3 class="article-category-title">カテゴリ</h3>
+          <div class="article-category-list">
+            <button
+              v-for="category in articleCategories"
+              :key="category"
+              class="article-category-chip"
+              @click="searchByCategory(category)"
             >
-              <div class="popular-product-details">
-                <span class="popular-product-name">{{ product.name }}</span>
-                <span class="popular-product-store">{{ product.storeName || '－' }}</span>
-              </div>
-              <span class="popular-product-price">¥{{ product.lowestPrice }}</span>
-            </router-link>
+              {{ category }}
+            </button>
           </div>
         </div>
       </aside>
@@ -238,6 +237,17 @@ export default {
         'パン・シリアル',
         '日用品',
         'その他'
+      ],
+      // コラム検索関連
+      articleSearchQuery: '',
+      articleCategories: [
+        '値上げ情報',
+        '特売情報',
+        '値下げ速報',
+        '節約術',
+        '市場分析',
+        '活用術',
+        '買い物術'
       ],
       // チラシ検索関連
       flyerSearchQuery: '',
@@ -371,22 +381,6 @@ export default {
     }
   },
   computed: {
-    popularProductsByCategory() {
-      // 表示するカテゴリ（3つ）
-      const targetCategories = ['飲料', '生鮮食品', 'お菓子・おつまみ']
-
-      return targetCategories.map(category => {
-        // カテゴリごとに商品を取得（最大3件）
-        const categoryProducts = this.products
-          .filter(p => p.category === category)
-          .slice(0, 3)
-
-        return {
-          category,
-          products: categoryProducts
-        }
-      }).filter(cat => cat.products.length > 0) // 商品が存在するカテゴリのみ返す
-    },
     currentPrefectures() {
       if (!this.selectedRegion) {
         return []
@@ -562,6 +556,16 @@ export default {
     },
     goToFlyer(index) {
       this.currentFlyerIndex = index
+    },
+    performArticleSearch() {
+      // ArticleListコンポーネントで検索を実行するために、ルーターでクエリパラメータを渡す
+      // 実装は後で ArticleList.vue で処理する
+      console.log('Article search:', this.articleSearchQuery)
+    },
+    searchByCategory(category) {
+      // カテゴリで検索
+      this.articleSearchQuery = category
+      this.performArticleSearch()
     }
   }
 }
@@ -596,11 +600,52 @@ export default {
   border-bottom: 2px solid var(--primary-color);
 }
 
-.popular-category {
-  margin-bottom: 32px;
+/* コラム検索ボックス */
+.article-search-box {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
 }
 
-.popular-category-title {
+.article-search-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.article-search-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.article-search-button {
+  width: 48px;
+  height: 48px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.article-search-button:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+/* コラムカテゴリ */
+.article-categories {
+  margin-bottom: 24px;
+}
+
+.article-category-title {
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
@@ -609,61 +654,30 @@ export default {
   border-left: 4px solid var(--primary-color);
 }
 
-.popular-products-list {
+.article-category-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.popular-product-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
+.article-category-chip {
+  padding: 10px 16px;
   background-color: white;
+  border: 2px solid var(--border-color);
   border-radius: 8px;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.popular-product-item:hover {
-  background-color: var(--bg-light);
-  transform: translateX(4px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.popular-product-details {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-  overflow: hidden;
-}
-
-.popular-product-name {
-  font-size: 14px;
   color: var(--text-primary);
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.popular-product-store {
-  font-size: 12px;
-  color: var(--text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.popular-product-price {
   font-size: 14px;
-  font-weight: bold;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.article-category-chip:hover {
+  background-color: var(--bg-light);
+  border-color: var(--primary-color);
   color: var(--primary-color);
-  margin-left: 8px;
-  white-space: nowrap;
+  transform: translateX(4px);
 }
 
 /* メインコンテンツ */
