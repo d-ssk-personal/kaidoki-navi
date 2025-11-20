@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 // ユーザー役割の定義
 export const USER_ROLES = {
   SYSTEM_ADMIN: 'system_admin',
+  COMPANY_ADMIN: 'company_admin',
   STORE_USER: 'store_user'
 }
 
@@ -15,10 +16,16 @@ export const useAdminStore = defineStore('admin', {
   getters: {
     // システム管理者かどうか
     isSystemAdmin: (state) => state.adminUser?.role === USER_ROLES.SYSTEM_ADMIN,
+    // 企業管理者かどうか
+    isCompanyAdmin: (state) => state.adminUser?.role === USER_ROLES.COMPANY_ADMIN,
     // 店舗ユーザーかどうか
     isStoreUser: (state) => state.adminUser?.role === USER_ROLES.STORE_USER,
     // ユーザーの役割
-    userRole: (state) => state.adminUser?.role
+    userRole: (state) => state.adminUser?.role,
+    // ユーザーの所属企業ID
+    userCompanyId: (state) => state.adminUser?.companyId,
+    // ユーザーの所属店舗ID
+    userStoreId: (state) => state.adminUser?.storeId
   },
 
   actions: {
@@ -30,7 +37,23 @@ export const useAdminStore = defineStore('admin', {
         this.adminUser = {
           id: id,
           name: 'システム管理者',
-          role: USER_ROLES.SYSTEM_ADMIN
+          role: USER_ROLES.SYSTEM_ADMIN,
+          companyId: null,
+          storeId: null
+        }
+        localStorage.setItem('adminAuth', 'true')
+        localStorage.setItem('adminUser', JSON.stringify(this.adminUser))
+        return true
+      }
+      // 企業管理者
+      if (id === 'company' && password === 'password') {
+        this.isAuthenticated = true
+        this.adminUser = {
+          id: id,
+          name: '企業管理者',
+          role: USER_ROLES.COMPANY_ADMIN,
+          companyId: 'COMP001',
+          storeId: null
         }
         localStorage.setItem('adminAuth', 'true')
         localStorage.setItem('adminUser', JSON.stringify(this.adminUser))
@@ -42,7 +65,9 @@ export const useAdminStore = defineStore('admin', {
         this.adminUser = {
           id: id,
           name: '店舗ユーザー',
-          role: USER_ROLES.STORE_USER
+          role: USER_ROLES.STORE_USER,
+          companyId: 'COMP001',
+          storeId: 'STORE001'
         }
         localStorage.setItem('adminAuth', 'true')
         localStorage.setItem('adminUser', JSON.stringify(this.adminUser))

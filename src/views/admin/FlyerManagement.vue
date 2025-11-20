@@ -40,7 +40,7 @@
           />
         </div>
 
-        <div class="filter-group">
+        <div v-if="adminStore.isSystemAdmin || adminStore.isCompanyAdmin" class="filter-group">
           <label class="filter-label">店舗ID</label>
           <input
             v-model="filters.storeId"
@@ -50,7 +50,7 @@
           />
         </div>
 
-        <div class="filter-group">
+        <div v-if="adminStore.isSystemAdmin || adminStore.isCompanyAdmin" class="filter-group">
           <label class="filter-label">店舗名</label>
           <input
             v-model="filters.storeName"
@@ -70,7 +70,7 @@
           />
         </div>
 
-        <div class="filter-group">
+        <div v-if="adminStore.isSystemAdmin || adminStore.isCompanyAdmin" class="filter-group">
           <label class="filter-label">住所</label>
           <input
             v-model="filters.address"
@@ -308,74 +308,271 @@ export default {
       selectedIds: [],
       bulkStatusChange: '',
       currentPage: 1,
-      itemsPerPage: 50,
+      itemsPerPage: 2,
       isDragging: false,
       startX: 0,
       scrollLeft: 0,
       searchTriggered: false,
+      filteredFlyers: [],
+      allFlyers: [],
       flyers: [
         {
           id: 1,
           companyId: 'COMP001',
-          companyName: '株式会社ABC商事',
+          companyName: '株式会社マルエツ',
           storeId: 'STORE001',
-          storeName: 'スーパーマーケット ABC',
+          storeName: 'マルエツ赤坂店',
           flyerId: 'FLYER001',
-          address: '東京都渋谷区渋谷1-1-1',
-          periodFrom: '2024-01-15',
-          periodTo: '2024-01-21',
+          address: '東京都港区赤坂3-10-15',
+          periodFrom: '2024-11-18',
+          periodTo: '2024-11-24',
           status: 'active',
           images: []
         },
         {
           id: 2,
-          companyId: 'COMP002',
-          companyName: '株式会社DEFホールディングス',
+          companyId: 'COMP001',
+          companyName: '株式会社マルエツ',
           storeId: 'STORE002',
-          storeName: 'ドラッグストア DEF',
+          storeName: 'マルエツ浦和店',
           flyerId: 'FLYER002',
-          address: '東京都新宿区新宿2-2-2',
-          periodFrom: '2024-01-10',
-          periodTo: '2024-01-16',
+          address: '埼玉県さいたま市浦和区高砂1-2-1',
+          periodFrom: '2024-11-15',
+          periodTo: '2024-11-21',
           status: 'active',
           images: []
         },
         {
           id: 3,
-          companyId: 'COMP003',
-          companyName: '株式会社GHIチェーン',
+          companyId: 'COMP002',
+          companyName: '株式会社ライフコーポレーション',
           storeId: 'STORE003',
-          storeName: 'ホームセンター GHI',
+          storeName: 'ライフ品川店',
           flyerId: 'FLYER003',
-          address: '神奈川県横浜市中区山下町3-3-3',
-          periodFrom: '2024-01-01',
-          periodTo: '2024-01-07',
-          status: 'inactive',
+          address: '東京都品川区北品川5-5-15',
+          periodFrom: '2024-11-20',
+          periodTo: '2024-11-26',
+          status: 'active',
           images: []
         },
         {
           id: 4,
-          companyId: 'COMP004',
-          companyName: '株式会社JKL電機',
+          companyId: 'COMP002',
+          companyName: '株式会社ライフコーポレーション',
           storeId: 'STORE004',
-          storeName: '家電量販店 JKL',
+          storeName: 'ライフ梅田店',
           flyerId: 'FLYER004',
-          address: '埼玉県さいたま市大宮区4-4-4',
-          periodFrom: '2024-01-20',
-          periodTo: '2024-01-26',
-          status: 'scheduled',
+          address: '大阪府大阪市北区梅田1-11-4',
+          periodFrom: '2024-11-01',
+          periodTo: '2024-11-07',
+          status: 'inactive',
           images: []
         },
         {
           id: 5,
-          companyId: 'COMP001',
-          companyName: '株式会社ABC商事',
+          companyId: 'COMP003',
+          companyName: '株式会社イオンリテール',
           storeId: 'STORE005',
-          storeName: 'スーパーマーケット MNO',
+          storeName: 'イオン幕張新都心店',
           flyerId: 'FLYER005',
-          address: '千葉県千葉市中央区5-5-5',
-          periodFrom: '2024-01-12',
-          periodTo: '2024-01-18',
+          address: '千葉県千葉市美浜区豊砂1-1',
+          periodFrom: '2024-11-22',
+          periodTo: '2024-11-28',
+          status: 'scheduled',
+          images: []
+        },
+        {
+          id: 6,
+          companyId: 'COMP003',
+          companyName: '株式会社イオンリテール',
+          storeId: 'STORE006',
+          storeName: 'イオンレイクタウン店',
+          flyerId: 'FLYER006',
+          address: '埼玉県越谷市レイクタウン3-1-1',
+          periodFrom: '2024-11-16',
+          periodTo: '2024-11-22',
+          status: 'active',
+          images: []
+        },
+        {
+          id: 7,
+          companyId: 'COMP004',
+          companyName: '株式会社サミットストア',
+          storeId: 'STORE007',
+          storeName: 'サミット高田馬場店',
+          flyerId: 'FLYER007',
+          address: '東京都新宿区高田馬場3-35-1',
+          periodFrom: '2024-11-18',
+          periodTo: '2024-11-24',
+          status: 'active',
+          images: []
+        },
+        {
+          id: 8,
+          companyId: 'COMP004',
+          companyName: '株式会社サミットストア',
+          storeId: 'STORE008',
+          storeName: 'サミット中野店',
+          flyerId: 'FLYER008',
+          address: '東京都中野区中野2-30-9',
+          periodFrom: '2024-10-25',
+          periodTo: '2024-10-31',
+          status: 'inactive',
+          images: []
+        },
+        {
+          id: 9,
+          companyId: 'COMP005',
+          companyName: '株式会社ヨークベニマル',
+          storeId: 'STORE009',
+          storeName: 'ヨークベニマル郡山店',
+          flyerId: 'FLYER009',
+          address: '福島県郡山市中町12-2',
+          periodFrom: '2024-11-19',
+          periodTo: '2024-11-25',
+          status: 'active',
+          images: []
+        },
+        {
+          id: 10,
+          companyId: 'COMP005',
+          companyName: '株式会社ヨークベニマル',
+          storeId: 'STORE010',
+          storeName: 'ヨークベニマル仙台店',
+          flyerId: 'FLYER010',
+          address: '宮城県仙台市青葉区中央3-6-1',
+          periodFrom: '2024-11-25',
+          periodTo: '2024-12-01',
+          status: 'scheduled',
+          images: []
+        },
+        {
+          id: 11,
+          companyId: 'COMP006',
+          companyName: '株式会社西友',
+          storeId: 'STORE011',
+          storeName: '西友池袋店',
+          flyerId: 'FLYER011',
+          address: '東京都豊島区南池袋1-28-1',
+          periodFrom: '2024-11-15',
+          periodTo: '2024-11-21',
+          status: 'active',
+          images: []
+        },
+        {
+          id: 12,
+          companyId: 'COMP006',
+          companyName: '株式会社西友',
+          storeId: 'STORE012',
+          storeName: '西友西新井店',
+          flyerId: 'FLYER012',
+          address: '東京都足立区西新井栄町1-17-1',
+          periodFrom: '2024-11-20',
+          periodTo: '2024-11-26',
+          status: 'active',
+          images: []
+        },
+        {
+          id: 13,
+          companyId: 'COMP007',
+          companyName: '株式会社イトーヨーカ堂',
+          storeId: 'STORE013',
+          storeName: 'イトーヨーカ堂木場店',
+          flyerId: 'FLYER013',
+          address: '東京都江東区木場2-18-11',
+          periodFrom: '2024-11-08',
+          periodTo: '2024-11-14',
+          status: 'inactive',
+          images: []
+        },
+        {
+          id: 14,
+          companyId: 'COMP008',
+          companyName: '株式会社ベルク',
+          storeId: 'STORE014',
+          storeName: 'ベルク所沢店',
+          flyerId: 'FLYER014',
+          address: '埼玉県所沢市日吉町11-16',
+          periodFrom: '2024-11-21',
+          periodTo: '2024-11-27',
+          status: 'active',
+          images: []
+        },
+        {
+          id: 15,
+          companyId: 'COMP009',
+          companyName: '株式会社オーケー',
+          storeId: 'STORE015',
+          storeName: 'オーケー横浜西口店',
+          flyerId: 'FLYER015',
+          address: '神奈川県横浜市西区南幸2-1-22',
+          periodFrom: '2024-10-28',
+          periodTo: '2024-11-03',
+          status: 'inactive',
+          images: []
+        },
+        {
+          id: 16,
+          companyId: 'COMP010',
+          companyName: '株式会社バロー',
+          storeId: 'STORE016',
+          storeName: 'バロー多治見店',
+          flyerId: 'FLYER016',
+          address: '岐阜県多治見市住吉町2-50',
+          periodFrom: '2024-11-23',
+          periodTo: '2024-11-29',
+          status: 'scheduled',
+          images: []
+        },
+        {
+          id: 17,
+          companyId: 'COMP011',
+          companyName: '株式会社アークス',
+          storeId: 'STORE017',
+          storeName: 'アークス札幌駅前店',
+          flyerId: 'FLYER017',
+          address: '北海道札幌市中央区北4条西4-1',
+          periodFrom: '2024-11-17',
+          periodTo: '2024-11-23',
+          status: 'active',
+          images: []
+        },
+        {
+          id: 18,
+          companyId: 'COMP012',
+          companyName: '株式会社万代',
+          storeId: 'STORE018',
+          storeName: '万代天王寺店',
+          flyerId: 'FLYER018',
+          address: '大阪府大阪市天王寺区堀越町17-1',
+          periodFrom: '2024-11-14',
+          periodTo: '2024-11-20',
+          status: 'active',
+          images: []
+        },
+        {
+          id: 19,
+          companyId: 'COMP013',
+          companyName: '株式会社平和堂',
+          storeId: 'STORE019',
+          storeName: '平和堂彦根店',
+          flyerId: 'FLYER019',
+          address: '滋賀県彦根市古沢町255-1',
+          periodFrom: '2024-11-24',
+          periodTo: '2024-11-30',
+          status: 'scheduled',
+          images: []
+        },
+        {
+          id: 20,
+          companyId: 'COMP014',
+          companyName: '株式会社フジ',
+          storeId: 'STORE020',
+          storeName: 'フジグラン松山店',
+          flyerId: 'FLYER020',
+          address: '愛媛県松山市宮西1-2-1',
+          periodFrom: '2024-11-19',
+          periodTo: '2024-11-25',
           status: 'active',
           images: []
         }
@@ -383,13 +580,73 @@ export default {
     }
   },
   computed: {
-    filteredFlyers() {
-      // 検索ボタンが押されていない場合は全件表示
-      if (!this.searchTriggered) {
-        return [...this.flyers]
+    paginatedFlyers() {
+      const start = (this.currentPage - 1) * this.itemsPerPage
+      const end = start + this.itemsPerPage
+      return this.filteredFlyers.slice(start, end)
+    },
+    totalPages() {
+      return Math.ceil(this.filteredFlyers.length / this.itemsPerPage)
+    },
+    displayedPages() {
+      const pages = []
+      const total = this.totalPages
+      const current = this.currentPage
+
+      // 現在のページの前後2ページを表示（最大5ページ）
+      let start = Math.max(1, current - 2)
+      let end = Math.min(total, current + 2)
+
+      // 5ページ表示できるように調整
+      if (end - start < 4) {
+        if (start === 1) {
+          end = Math.min(total, start + 4)
+        } else if (end === total) {
+          start = Math.max(1, end - 4)
+        }
       }
 
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+
+      return pages
+    },
+    isAllSelected() {
+      return this.paginatedFlyers.length > 0 &&
+        this.selectedIds.length === this.filteredFlyers.length
+    }
+  },
+  mounted() {
+    // 認証チェック
+    this.adminStore.checkAuth()
+    if (!this.adminStore.isAuthenticated) {
+      this.$router.push('/admin/login')
+      return
+    }
+
+    // 全チラシを読み込み
+    this.loadAllFlyers()
+  },
+  methods: {
+    loadAllFlyers() {
+      // 全チラシを読み込んで初期表示
+      this.allFlyers = [...this.flyers]
+      this.filteredFlyers = [...this.flyers]
+    },
+    search() {
+      // ベースとなるデータセット
       let results = [...this.flyers]
+
+      // 非システム管理者の場合、自動的にcompanyIdでフィルタリング
+      if (!this.adminStore.isSystemAdmin && this.adminStore.user?.companyId) {
+        results = results.filter(f => f.companyId === this.adminStore.user.companyId)
+      }
+
+      // 店舗ユーザーの場合、自動的にstoreIdでフィルタリング
+      if (this.adminStore.isStoreUser && this.adminStore.user?.storeId) {
+        results = results.filter(f => f.storeId === this.adminStore.user.storeId)
+      }
 
       // 企業IDフィルター
       if (this.filters.companyId.trim()) {
@@ -458,55 +715,8 @@ export default {
         results = results.filter(f => f.status === this.filters.status)
       }
 
-      return results
-    },
-    paginatedFlyers() {
-      const start = (this.currentPage - 1) * this.itemsPerPage
-      const end = start + this.itemsPerPage
-      return this.filteredFlyers.slice(start, end)
-    },
-    totalPages() {
-      return Math.ceil(this.filteredFlyers.length / this.itemsPerPage)
-    },
-    displayedPages() {
-      const pages = []
-      const total = this.totalPages
-      const current = this.currentPage
-
-      // 現在のページの前後2ページを表示（最大5ページ）
-      let start = Math.max(1, current - 2)
-      let end = Math.min(total, current + 2)
-
-      // 5ページ表示できるように調整
-      if (end - start < 4) {
-        if (start === 1) {
-          end = Math.min(total, start + 4)
-        } else if (end === total) {
-          start = Math.max(1, end - 4)
-        }
-      }
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i)
-      }
-
-      return pages
-    },
-    isAllSelected() {
-      return this.paginatedFlyers.length > 0 &&
-        this.selectedIds.length === this.filteredFlyers.length
-    }
-  },
-  mounted() {
-    // 認証チェック
-    this.adminStore.checkAuth()
-    if (!this.adminStore.isAuthenticated) {
-      this.$router.push('/admin/login')
-    }
-  },
-  methods: {
-    search() {
-      this.searchTriggered = true
+      // フィルタリング結果を設定
+      this.filteredFlyers = results
       this.currentPage = 1
     },
     // ページネーション関連

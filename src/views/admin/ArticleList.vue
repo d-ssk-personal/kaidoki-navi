@@ -246,11 +246,12 @@ export default {
       loading: false,
       selectedIds: [],
       currentPage: 1,
-      itemsPerPage: 50,
+      itemsPerPage: 2,
       isDragging: false,
       startX: 0,
       scrollLeft: 0,
-      searchTriggered: false
+      filteredArticles: [],
+      allArticles: []
     }
   },
   setup() {
@@ -259,34 +260,6 @@ export default {
     return { adminStore, articlesStore }
   },
   computed: {
-    filteredArticles() {
-      // 検索ボタンが押されていない場合は全件表示
-      if (!this.searchTriggered) {
-        return this.articlesStore.searchArticles('', '', '', '')
-      }
-
-      let articles = this.articlesStore.searchArticles(
-        this.searchQuery,
-        '',
-        this.filterTag,
-        this.filterStatus
-      )
-
-      // 日付フィルター
-      if (this.filterDate) {
-        const filterDateObj = new Date(this.filterDate)
-        articles = articles.filter(article => {
-          const articleDate = new Date(article.publishedAt)
-          return (
-            articleDate.getFullYear() === filterDateObj.getFullYear() &&
-            articleDate.getMonth() === filterDateObj.getMonth() &&
-            articleDate.getDate() === filterDateObj.getDate()
-          )
-        })
-      }
-
-      return articles
-    },
     paginatedArticles() {
       const start = (this.currentPage - 1) * this.itemsPerPage
       const end = start + this.itemsPerPage
@@ -326,8 +299,34 @@ export default {
   },
   methods: {
     performSearch() {
-      this.searchTriggered = true
       this.currentPage = 1
+
+      let articles = this.articlesStore.searchArticles(
+        this.searchQuery,
+        '',
+        this.filterTag,
+        this.filterStatus
+      )
+
+      // 日付フィルター
+      if (this.filterDate) {
+        const filterDateObj = new Date(this.filterDate)
+        articles = articles.filter(article => {
+          const articleDate = new Date(article.publishedAt)
+          return (
+            articleDate.getFullYear() === filterDateObj.getFullYear() &&
+            articleDate.getMonth() === filterDateObj.getMonth() &&
+            articleDate.getDate() === filterDateObj.getDate()
+          )
+        })
+      }
+
+      this.filteredArticles = articles
+    },
+    loadAllArticles() {
+      // 初期表示時は全件表示
+      this.filteredArticles = this.articlesStore.searchArticles('', '', '', '')
+      this.allArticles = this.filteredArticles
     },
     // ページネーション関連
     goToPage(page) {
@@ -449,7 +448,18 @@ export default {
     this.adminStore.checkAuth()
     if (!this.adminStore.isAuthenticated) {
       this.$router.push('/admin/login')
+      return
     }
+
+    // 権限チェック（システム管理者のみ）
+    if (!this.adminStore.isSystemAdmin) {
+      alert('この機能はシステム管理者のみ利用可能です')
+      this.$router.push('/admin')
+      return
+    }
+
+    // データロード
+    this.loadAllArticles()
   }
 }
 </script>
