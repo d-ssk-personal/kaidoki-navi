@@ -1,20 +1,55 @@
 <template>
-  <div class="flyer-management">
-    <!-- パンくずリスト -->
-    <nav class="breadcrumb">
-      <router-link to="/admin" class="breadcrumb-item">管理者トップ</router-link>
-      <span class="breadcrumb-separator">›</span>
-      <span class="breadcrumb-item active">チラシ管理</span>
-    </nav>
-
-    <div class="page-header">
-      <h1 class="page-title">チラシ管理</h1>
-      <p class="page-description">チラシの追加・編集・削除を行います</p>
+  <div class="admin-flyer-list">
+    <div class="admin-header">
+      <div class="header-left">
+        <h1 class="page-title">チラシ管理</h1>
+        <!-- パンくずリスト -->
+        <nav class="breadcrumb">
+          <router-link to="/admin">管理画面</router-link>
+          <span class="separator">›</span>
+          <span class="current">チラシ管理</span>
+        </nav>
+      </div>
+      <button @click="handleLogout" class="logout-button">
+        ログアウト
+      </button>
     </div>
+
+    <div class="page-content">
 
     <!-- 検索フィルター -->
     <div class="search-section">
       <div class="search-filters">
+        <div v-if="adminStore.isSystemAdmin" class="filter-group">
+          <label class="filter-label">企業ID</label>
+          <input
+            v-model="filters.companyId"
+            type="text"
+            class="filter-input"
+            placeholder="企業IDで検索"
+          />
+        </div>
+
+        <div v-if="adminStore.isSystemAdmin" class="filter-group">
+          <label class="filter-label">企業名</label>
+          <input
+            v-model="filters.companyName"
+            type="text"
+            class="filter-input"
+            placeholder="企業名で検索"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">店舗ID</label>
+          <input
+            v-model="filters.storeId"
+            type="text"
+            class="filter-input"
+            placeholder="店舗IDで検索"
+          />
+        </div>
+
         <div class="filter-group">
           <label class="filter-label">店舗名</label>
           <input
@@ -22,6 +57,26 @@
             type="text"
             class="filter-input"
             placeholder="店舗名で検索"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">チラシID</label>
+          <input
+            v-model="filters.flyerId"
+            type="text"
+            class="filter-input"
+            placeholder="チラシIDで検索"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">住所</label>
+          <input
+            v-model="filters.address"
+            type="text"
+            class="filter-input"
+            placeholder="住所で検索"
           />
         </div>
 
@@ -76,24 +131,38 @@
         <span class="bulk-count">{{ selectedIds.length }}件選択中</span>
       </div>
       <div class="bulk-buttons">
+        <select v-model="bulkStatusChange" class="bulk-status-select">
+          <option value="">ステータスを選択</option>
+          <option value="active">掲載中</option>
+          <option value="inactive">掲載終了</option>
+          <option value="scheduled">掲載予定</option>
+        </select>
+        <button class="btn-primary" @click="bulkChangeStatus" :disabled="!bulkStatusChange">
+          一括ステータス変更
+        </button>
         <button class="btn-danger" @click="bulkDelete">
           一括削除
         </button>
       </div>
     </div>
 
-    <!-- アクションバー -->
-    <div class="actions-bar">
-      <div class="results-info">
-        検索結果: {{ filteredFlyers.length }}件
+    <!-- チラシ一覧 -->
+    <div class="flyers-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          チラシ一覧
+          <span class="result-count">（{{ filteredFlyers.length }}件）</span>
+        </h2>
+        <router-link to="/admin/flyers/new" class="btn-create">
+          ➕ 新規作成
+        </router-link>
       </div>
-      <router-link to="/admin/flyers/new" class="btn-primary">
-        + 新規チラシ追加
-      </router-link>
-    </div>
 
-    <!-- チラシ一覧テーブル -->
-    <div class="table-container">
+      <div v-if="filteredFlyers.length === 0" class="no-results">
+        <p>チラシが見つかりませんでした</p>
+      </div>
+
+      <div v-else class="table-container">
       <table class="flyer-table">
         <thead>
           <tr>
@@ -104,18 +173,19 @@
                 @change="toggleSelectAll"
               />
             </th>
-            <th class="col-store">店舗名</th>
-            <th class="col-period">掲載期間</th>
+            <th v-if="adminStore.isSystemAdmin" class="col-company-id">企業ID</th>
+            <th v-if="adminStore.isSystemAdmin" class="col-company-name">企業名</th>
+            <th class="col-store-id">店舗ID</th>
+            <th class="col-store-name">店舗名</th>
+            <th class="col-flyer-id">チラシID</th>
+            <th class="col-address">住所</th>
+            <th class="col-period-from">掲載期間From</th>
+            <th class="col-period-to">掲載期間To</th>
             <th class="col-status">掲載ステータス</th>
             <th class="col-actions">操作</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="filteredFlyers.length === 0">
-            <td colspan="5" class="empty-message">
-              チラシが見つかりませんでした
-            </td>
-          </tr>
           <tr
             v-for="flyer in filteredFlyers"
             :key="flyer.id"
@@ -128,31 +198,40 @@
                 @change="toggleSelect(flyer.id)"
               />
             </td>
-            <td class="col-store">{{ flyer.storeName }}</td>
-            <td class="col-period">
-              {{ formatDate(flyer.periodFrom) }} 〜 {{ formatDate(flyer.periodTo) }}
-            </td>
+            <td v-if="adminStore.isSystemAdmin" class="col-company-id">{{ flyer.companyId }}</td>
+            <td v-if="adminStore.isSystemAdmin" class="col-company-name">{{ flyer.companyName }}</td>
+            <td class="col-store-id">{{ flyer.storeId }}</td>
+            <td class="col-store-name">{{ flyer.storeName }}</td>
+            <td class="col-flyer-id">{{ flyer.flyerId }}</td>
+            <td class="col-address">{{ flyer.address }}</td>
+            <td class="col-period-from">{{ formatDate(flyer.periodFrom) }}</td>
+            <td class="col-period-to">{{ formatDate(flyer.periodTo) }}</td>
             <td class="col-status">
               <span :class="['status-badge', `status-${flyer.status}`]">
                 {{ getStatusLabel(flyer.status) }}
               </span>
             </td>
             <td class="col-actions">
-              <div class="action-buttons">
-                <router-link
-                  :to="`/admin/flyers/edit/${flyer.id}`"
-                  class="btn-edit"
-                >
-                  編集
-                </router-link>
-                <button class="btn-delete" @click="deleteFlyer(flyer.id)">
-                  削除
-                </button>
-              </div>
+              <button
+                @click="$router.push(`/admin/flyers/edit/${flyer.id}`)"
+                class="btn-edit"
+                title="編集"
+              >
+                ✏️
+              </button>
+              <button
+                @click="deleteFlyer(flyer.id)"
+                class="btn-delete"
+                title="削除"
+              >
+                🗑️
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
+      </div>
+    </div>
     </div>
   </div>
 </template>
@@ -169,16 +248,27 @@ export default {
   data() {
     return {
       filters: {
+        companyId: '',
+        companyName: '',
+        storeId: '',
         storeName: '',
+        flyerId: '',
+        address: '',
         periodFrom: '',
         periodTo: '',
         status: ''
       },
       selectedIds: [],
+      bulkStatusChange: '',
       flyers: [
         {
           id: 1,
+          companyId: 'COMP001',
+          companyName: '株式会社ABC商事',
+          storeId: 'STORE001',
           storeName: 'スーパーマーケット ABC',
+          flyerId: 'FLYER001',
+          address: '東京都渋谷区渋谷1-1-1',
           periodFrom: '2024-01-15',
           periodTo: '2024-01-21',
           status: 'active',
@@ -186,7 +276,12 @@ export default {
         },
         {
           id: 2,
+          companyId: 'COMP002',
+          companyName: '株式会社DEFホールディングス',
+          storeId: 'STORE002',
           storeName: 'ドラッグストア DEF',
+          flyerId: 'FLYER002',
+          address: '東京都新宿区新宿2-2-2',
           periodFrom: '2024-01-10',
           periodTo: '2024-01-16',
           status: 'active',
@@ -194,7 +289,12 @@ export default {
         },
         {
           id: 3,
+          companyId: 'COMP003',
+          companyName: '株式会社GHIチェーン',
+          storeId: 'STORE003',
           storeName: 'ホームセンター GHI',
+          flyerId: 'FLYER003',
+          address: '神奈川県横浜市中区山下町3-3-3',
           periodFrom: '2024-01-01',
           periodTo: '2024-01-07',
           status: 'inactive',
@@ -202,7 +302,12 @@ export default {
         },
         {
           id: 4,
+          companyId: 'COMP004',
+          companyName: '株式会社JKL電機',
+          storeId: 'STORE004',
           storeName: '家電量販店 JKL',
+          flyerId: 'FLYER004',
+          address: '埼玉県さいたま市大宮区4-4-4',
           periodFrom: '2024-01-20',
           periodTo: '2024-01-26',
           status: 'scheduled',
@@ -210,7 +315,12 @@ export default {
         },
         {
           id: 5,
+          companyId: 'COMP001',
+          companyName: '株式会社ABC商事',
+          storeId: 'STORE005',
           storeName: 'スーパーマーケット MNO',
+          flyerId: 'FLYER005',
+          address: '千葉県千葉市中央区5-5-5',
           periodFrom: '2024-01-12',
           periodTo: '2024-01-18',
           status: 'active',
@@ -223,11 +333,51 @@ export default {
     filteredFlyers() {
       let results = [...this.flyers]
 
+      // 企業IDフィルター
+      if (this.filters.companyId.trim()) {
+        const query = this.filters.companyId.toLowerCase()
+        results = results.filter(f =>
+          f.companyId.toLowerCase().includes(query)
+        )
+      }
+
+      // 企業名フィルター
+      if (this.filters.companyName.trim()) {
+        const query = this.filters.companyName.toLowerCase()
+        results = results.filter(f =>
+          f.companyName.toLowerCase().includes(query)
+        )
+      }
+
+      // 店舗IDフィルター
+      if (this.filters.storeId.trim()) {
+        const query = this.filters.storeId.toLowerCase()
+        results = results.filter(f =>
+          f.storeId.toLowerCase().includes(query)
+        )
+      }
+
       // 店舗名フィルター
       if (this.filters.storeName.trim()) {
         const query = this.filters.storeName.toLowerCase()
         results = results.filter(f =>
           f.storeName.toLowerCase().includes(query)
+        )
+      }
+
+      // チラシIDフィルター
+      if (this.filters.flyerId.trim()) {
+        const query = this.filters.flyerId.toLowerCase()
+        results = results.filter(f =>
+          f.flyerId.toLowerCase().includes(query)
+        )
+      }
+
+      // 住所フィルター
+      if (this.filters.address.trim()) {
+        const query = this.filters.address.toLowerCase()
+        results = results.filter(f =>
+          f.address.toLowerCase().includes(query)
         )
       }
 
@@ -271,7 +421,12 @@ export default {
     },
     resetFilters() {
       this.filters = {
+        companyId: '',
+        companyName: '',
+        storeId: '',
         storeName: '',
+        flyerId: '',
+        address: '',
         periodFrom: '',
         periodTo: '',
         status: ''
@@ -291,6 +446,21 @@ export default {
         this.selectedIds = []
       } else {
         this.selectedIds = this.filteredFlyers.map(f => f.id)
+      }
+    },
+    bulkChangeStatus() {
+      if (!this.bulkStatusChange) {
+        alert('ステータスを選択してください')
+        return
+      }
+      if (confirm(`選択した${this.selectedIds.length}件のチラシのステータスを「${this.getStatusLabel(this.bulkStatusChange)}」に変更しますか？`)) {
+        this.selectedIds.forEach(id => {
+          const flyer = this.flyers.find(f => f.id === id)
+          if (flyer) flyer.status = this.bulkStatusChange
+        })
+        alert('ステータスを変更しました')
+        this.selectedIds = []
+        this.bulkStatusChange = ''
       }
     },
     bulkDelete() {
@@ -326,16 +496,45 @@ export default {
         scheduled: '掲載予定'
       }
       return labels[status] || status
+    },
+    handleLogout() {
+      if (confirm('ログアウトしますか？')) {
+        this.adminStore.logout()
+        this.$router.push('/admin/login')
+      }
     }
   }
 }
 </script>
 
 <style scoped>
-.flyer-management {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 24px;
+.admin-flyer-list {
+  min-height: 100vh;
+  background-color: var(--bg-light);
+}
+
+.admin-header {
+  background-color: white;
+  padding: 24px 32px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin: 0;
 }
 
 /* パンくずリスト */
@@ -343,67 +542,68 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 24px;
   font-size: 14px;
   color: var(--text-secondary);
 }
 
-.breadcrumb-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  color: var(--text-secondary);
-  transition: color 0.3s ease;
-}
-
-.breadcrumb-item:hover:not(.active) {
+.breadcrumb a {
   color: var(--primary-color);
+  text-decoration: none;
+  transition: opacity 0.3s ease;
 }
 
-.breadcrumb-item.active {
-  color: var(--text-primary);
-  font-weight: 600;
+.breadcrumb a:hover {
+  opacity: 0.7;
+  text-decoration: underline;
 }
 
-.breadcrumb-separator {
+.breadcrumb .separator {
   color: var(--text-secondary);
 }
 
-/* ページヘッダー */
-.page-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 40px;
+.breadcrumb .current {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.logout-button {
+  padding: 10px 20px;
+  background-color: var(--danger-color);
   color: white;
-  margin-bottom: 32px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.page-title {
-  font-size: 32px;
-  font-weight: bold;
-  margin-bottom: 8px;
+.logout-button:hover {
+  background-color: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
-.page-description {
-  font-size: 16px;
-  opacity: 0.95;
+.page-content {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 40px 32px;
 }
 
 /* 検索セクション */
 .search-section {
   background-color: white;
-  border-radius: 12px;
   padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 32px;
 }
 
 .search-filters {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .filter-group {
@@ -416,20 +616,21 @@ export default {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
+  white-space: nowrap;
 }
 
 .filter-input,
 .filter-select {
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 2px solid var(--border-color);
   border-radius: 8px;
   font-size: 14px;
+  outline: none;
   transition: border-color 0.3s ease;
 }
 
 .filter-input:focus,
 .filter-select:focus {
-  outline: none;
   border-color: var(--primary-color);
 }
 
@@ -439,60 +640,112 @@ export default {
   gap: 12px;
 }
 
-/* 一括操作バー */
+/* 一括操作 */
 .bulk-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #f7fafc;
-  border: 2px solid var(--primary-color);
-  border-radius: 8px;
-  padding: 16px 24px;
-  margin-bottom: 16px;
-}
-
-.bulk-info {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 2px solid var(--border-color);
 }
 
-.bulk-checkbox {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-}
-
-.bulk-count {
+.selected-count {
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
+  margin-right: auto;
 }
 
 .bulk-buttons {
   display: flex;
   gap: 12px;
+  align-items: center;
 }
 
-/* アクションバー */
-.actions-bar {
+.bulk-status-select {
+  padding: 8px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.bulk-status-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.btn-bulk {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* チラシ一覧セクション */
+.flyers-section {
+  background-color: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
-.results-info {
-  font-size: 14px;
+.section-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.result-count {
+  font-size: 18px;
   color: var(--text-secondary);
-  font-weight: 500;
+  font-weight: normal;
+}
+
+.btn-create {
+  padding: 12px 24px;
+  background-color: var(--secondary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-create:hover {
+  background-color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.no-results {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+  font-size: 16px;
 }
 
 /* ボタン */
 .btn-primary,
-.btn-secondary,
-.btn-danger,
-.btn-edit,
-.btn-delete {
+.btn-secondary {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
@@ -509,10 +762,15 @@ export default {
   color: white;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background-color: #5a67d8;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-secondary {
@@ -527,27 +785,32 @@ export default {
 }
 
 .btn-danger {
+  padding: 8px 16px;
   background-color: var(--danger-color);
   color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .btn-danger:hover {
-  background-color: #c53030;
+  background-color: #dc2626;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
 }
 
 /* テーブル */
 .table-container {
-  background-color: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
 }
 
 .flyer-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 14px;
+  min-width: 1600px;
 }
 
 .flyer-table thead {
@@ -555,19 +818,22 @@ export default {
 }
 
 .flyer-table th {
-  padding: 16px;
+  padding: 12px 16px;
   text-align: left;
-  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
   border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
 }
 
 .flyer-table td {
   padding: 16px;
-  font-size: 14px;
-  color: var(--text-primary);
   border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.flyer-table tbody tr {
+  transition: background-color 0.2s ease;
 }
 
 .flyer-table tbody tr:hover {
@@ -575,7 +841,7 @@ export default {
 }
 
 .flyer-table tbody tr.selected {
-  background-color: #ebf4ff;
+  background-color: #dbeafe;
 }
 
 .col-checkbox {
@@ -589,13 +855,42 @@ export default {
   cursor: pointer;
 }
 
-.col-store {
-  min-width: 200px;
+.col-company-id {
+  min-width: 100px;
   font-weight: 500;
 }
 
-.col-period {
-  min-width: 220px;
+.col-company-name {
+  min-width: 180px;
+  font-weight: 500;
+}
+
+.col-store-id {
+  min-width: 100px;
+  font-weight: 500;
+}
+
+.col-store-name {
+  min-width: 180px;
+  font-weight: 500;
+}
+
+.col-flyer-id {
+  min-width: 100px;
+  font-weight: 500;
+}
+
+.col-address {
+  min-width: 250px;
+  color: var(--text-secondary);
+}
+
+.col-period-from {
+  min-width: 120px;
+}
+
+.col-period-to {
+  min-width: 120px;
 }
 
 .col-status {
@@ -603,86 +898,73 @@ export default {
 }
 
 .col-actions {
-  width: 180px;
-}
-
-.empty-message {
+  width: 100px;
   text-align: center;
-  padding: 60px 20px;
-  color: var(--text-secondary);
-  font-size: 16px;
 }
 
 /* ステータスバッジ */
 .status-badge {
   display: inline-block;
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 4px 12px;
+  border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .status-active {
-  background-color: #c6f6d5;
-  color: #22543d;
+  background-color: #d1fae5;
+  color: #065f46;
 }
 
 .status-inactive {
-  background-color: #fed7d7;
-  color: #742a2a;
+  background-color: #fee2e2;
+  color: #991b1b;
 }
 
 .status-scheduled {
-  background-color: #bee3f8;
-  color: #2c5282;
+  background-color: #dbeafe;
+  color: #1e40af;
 }
 
 /* アクションボタン */
 .action-buttons {
   display: flex;
-  gap: 8px;
+  gap: 4px;
+  justify-content: center;
 }
 
-.btn-edit {
-  padding: 6px 12px;
-  background-color: var(--primary-color);
-  color: white;
-  font-size: 13px;
-}
-
-.btn-edit:hover {
-  background-color: #5a67d8;
-}
-
+.btn-edit,
 .btn-delete {
-  padding: 6px 12px;
-  background-color: white;
-  color: var(--danger-color);
-  border: 2px solid var(--danger-color);
-  font-size: 13px;
+  padding: 6px 10px;
+  background-color: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  color: var(--text-primary);
 }
 
+.btn-edit:hover,
 .btn-delete:hover {
-  background-color: var(--danger-color);
-  color: white;
+  background-color: var(--bg-light);
+  transform: scale(1.1);
 }
 
-/* レスポンシブ */
 @media (max-width: 768px) {
-  .flyer-management {
-    padding: 16px;
-  }
-
-  .page-header {
-    padding: 24px;
+  .admin-header {
+    padding: 16px 20px;
   }
 
   .page-title {
-    font-size: 24px;
+    font-size: 22px;
   }
 
-  .search-section {
-    padding: 16px;
+  .page-content {
+    padding: 24px 20px;
   }
 
   .search-filters {
@@ -690,23 +972,26 @@ export default {
   }
 
   .bulk-actions {
+    flex-wrap: wrap;
+  }
+
+  .selected-count {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .section-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
 
-  .actions-bar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+  .btn-create {
+    width: 100%;
   }
 
   .table-container {
-    overflow-x: auto;
-  }
-
-  .flyer-table {
-    min-width: 800px;
+    overflow-x: scroll;
   }
 }
 </style>
