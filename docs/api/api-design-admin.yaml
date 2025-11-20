@@ -88,28 +88,11 @@ paths:
                     $ref: '#/components/schemas/AdminUser'
         '401':
           $ref: '#/components/responses/Unauthorized'
-
-  /auth/me:
-    get:
-      tags:
-        - 認証
-      summary: ログイン中の管理者情報取得
-      description: 現在ログイン中の管理者情報を取得します
-      operationId: getCurrentAdmin
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: 成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminUser'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ==================== コラム管理 ====================
-  /articles:
+  /articles/list:
     get:
       tags:
         - コラム管理
@@ -187,11 +170,15 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /articles/add:
     post:
       tags:
         - コラム管理
-      summary: コラム新規作成
-      description: 新しいコラム記事を作成します（システム管理者のみ）
+      summary: コラム追加
+      description: 新しいコラム記事を追加します（システム管理者のみ）
       operationId: createArticle
       security:
         - BearerAuth: []
@@ -203,7 +190,7 @@ paths:
               $ref: '#/components/schemas/ArticleInput'
       responses:
         '201':
-          description: 作成成功
+          description: 追加成功
           content:
             application/json:
               schema:
@@ -214,8 +201,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /articles/{articleId}:
+  /articles/list/{articleId}:
     get:
       tags:
         - コラム管理
@@ -244,6 +233,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /articles/update/{articleId}:
     put:
       tags:
         - コラム管理
@@ -280,6 +273,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /articles/delete/{articleId}:
     delete:
       tags:
         - コラム管理
@@ -312,9 +309,11 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /articles/bulk-status:
-    patch:
+    put:
       tags:
         - コラム管理
       summary: コラム一括ステータス変更
@@ -361,8 +360,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /articles/bulk:
+  /articles/bulk-delete:
     delete:
       tags:
         - コラム管理
@@ -371,20 +372,14 @@ paths:
       operationId: bulkDeleteArticles
       security:
         - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - articleIds
-              properties:
-                articleIds:
-                  type: array
-                  items:
-                    type: integer
-                  example: [1, 2, 3]
+      parameters:
+        - name: articleIds
+          in: query
+          required: true
+          description: 削除するコラムIDのカンマ区切りリスト
+          schema:
+            type: string
+            example: "1,2,3"
       responses:
         '200':
           description: 削除成功
@@ -405,9 +400,11 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ==================== 企業管理 ====================
-  /companies:
+  /companies/list:
     get:
       tags:
         - 企業管理
@@ -469,11 +466,15 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /companies/add:
     post:
       tags:
         - 企業管理
-      summary: 企業新規作成
-      description: 新しい企業を作成します（システム管理者のみ）
+      summary: 企業追加
+      description: 新しい企業を追加します（システム管理者のみ）
       operationId: createCompany
       security:
         - BearerAuth: []
@@ -485,7 +486,7 @@ paths:
               $ref: '#/components/schemas/CompanyInput'
       responses:
         '201':
-          description: 作成成功
+          description: 追加成功
           content:
             application/json:
               schema:
@@ -496,8 +497,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /companies/{companyId}:
+  /companies/list/{companyId}:
     get:
       tags:
         - 企業管理
@@ -526,6 +529,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /companies/update/{companyId}:
     put:
       tags:
         - 企業管理
@@ -562,6 +569,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /companies/delete/{companyId}:
     delete:
       tags:
         - 企業管理
@@ -594,9 +605,11 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /companies/bulk-status:
-    patch:
+    put:
       tags:
         - 企業管理
       summary: 企業一括ステータス変更
@@ -643,9 +656,11 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ==================== 店舗管理 ====================
-  /stores:
+  /stores/list:
     get:
       tags:
         - 店舗管理
@@ -719,16 +734,20 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /stores/add:
     post:
       tags:
         - 店舗管理
-      summary: 店舗新規作成
+      summary: 店舗追加
       description: |
-        新しい店舗を作成します。
+        新しい店舗を追加します。
 
         **権限:**
-        - システム管理者: 全企業の店舗を作成可能
-        - 企業管理者: 自社の店舗のみ作成可能
+        - システム管理者: 全企業の店舗を追加可能
+        - 企業管理者: 自社の店舗のみ追加可能
       operationId: createStore
       security:
         - BearerAuth: []
@@ -740,7 +759,7 @@ paths:
               $ref: '#/components/schemas/StoreInput'
       responses:
         '201':
-          description: 作成成功
+          description: 追加成功
           content:
             application/json:
               schema:
@@ -751,8 +770,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /stores/{storeId}:
+  /stores/list/{storeId}:
     get:
       tags:
         - 店舗管理
@@ -781,6 +802,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /stores/update/{storeId}:
     put:
       tags:
         - 店舗管理
@@ -817,6 +842,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /stores/delete/{storeId}:
     delete:
       tags:
         - 店舗管理
@@ -849,9 +878,11 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ==================== チラシ管理 ====================
-  /flyers:
+  /flyers/list:
     get:
       tags:
         - チラシ管理
@@ -940,17 +971,21 @@ paths:
                     $ref: '#/components/schemas/Pagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /flyers/add:
     post:
       tags:
         - チラシ管理
-      summary: チラシ新規作成
+      summary: チラシ追加
       description: |
-        新しいチラシを作成します。
+        新しいチラシを追加します。
 
         **権限:**
-        - システム管理者: 全企業のチラシを作成可能
-        - 企業管理者: 自社のチラシのみ作成可能
-        - 店舗ユーザー: 自店舗のチラシのみ作成可能
+        - システム管理者: 全企業のチラシを追加可能
+        - 企業管理者: 自社のチラシのみ追加可能
+        - 店舗ユーザー: 自店舗のチラシのみ追加可能
       operationId: createFlyer
       security:
         - BearerAuth: []
@@ -962,7 +997,7 @@ paths:
               $ref: '#/components/schemas/FlyerInput'
       responses:
         '201':
-          description: 作成成功
+          description: 追加成功
           content:
             application/json:
               schema:
@@ -973,8 +1008,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /flyers/{flyerId}:
+  /flyers/list/{flyerId}:
     get:
       tags:
         - チラシ管理
@@ -1003,6 +1040,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /flyers/update/{flyerId}:
     put:
       tags:
         - チラシ管理
@@ -1039,6 +1080,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /flyers/delete/{flyerId}:
     delete:
       tags:
         - チラシ管理
@@ -1071,9 +1116,11 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ==================== アカウント管理 ====================
-  /accounts:
+  /accounts/list:
     get:
       tags:
         - アカウント管理
@@ -1136,17 +1183,21 @@ paths:
                     $ref: '#/components/schemas/Pagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /accounts/add:
     post:
       tags:
         - アカウント管理
-      summary: アカウント新規作成
+      summary: アカウント追加
       description: |
-        新しい管理者アカウントを作成します。
+        新しい管理者アカウントを追加します。
 
         **権限:**
-        - システム管理者: 全役割のアカウントを作成可能
-        - 企業管理者: 自社の企業管理者・店舗ユーザーを作成可能
-        - 店舗ユーザー: 作成不可
+        - システム管理者: 全役割のアカウントを追加可能
+        - 企業管理者: 自社の企業管理者・店舗ユーザーを追加可能
+        - 店舗ユーザー: 追加不可
       operationId: createAccount
       security:
         - BearerAuth: []
@@ -1158,7 +1209,7 @@ paths:
               $ref: '#/components/schemas/AccountInput'
       responses:
         '201':
-          description: 作成成功
+          description: 追加成功
           content:
             application/json:
               schema:
@@ -1169,8 +1220,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /accounts/{accountId}:
+  /accounts/list/{accountId}:
     get:
       tags:
         - アカウント管理
@@ -1199,6 +1252,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /accounts/update/{accountId}:
     put:
       tags:
         - アカウント管理
@@ -1235,6 +1292,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /accounts/delete/{accountId}:
     delete:
       tags:
         - アカウント管理
@@ -1267,6 +1328,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 # ==================== コンポーネント ====================
 components:

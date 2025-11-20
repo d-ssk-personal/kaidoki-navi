@@ -43,7 +43,7 @@
 
 6. **認証**
    - ユーザーログイン/ログアウト
-   - 新規登録
+   - ユーザー登録
 
 ### 管理者側API (`api-design-admin.yaml`)
 
@@ -85,7 +85,39 @@
 
 6. **認証**
    - 管理者ログイン
-   - ログイン中の管理者情報取得
+
+## APIパス命名規則
+
+### 基本ルール
+- 機能を先頭に配置: `/{機能名}/{操作}`
+- 一覧取得: `/list`
+- 追加: `/add`
+- 詳細取得: `/list/{id}`
+- 更新: `/update/{id}`
+- 削除: `/delete/{id}`
+- 一括操作: `/bulk-{操作名}`
+
+### 例
+
+#### 管理者側API
+```
+GET  /admin/articles/list              # コラム一覧取得
+POST /admin/articles/add               # コラム追加
+GET  /admin/articles/list/{articleId}  # コラム詳細取得
+PUT  /admin/articles/update/{articleId} # コラム更新
+DELETE /admin/articles/delete/{articleId} # コラム削除
+PUT  /admin/articles/bulk-status       # コラム一括ステータス変更
+DELETE /admin/articles/bulk-delete?articleIds=1,2,3 # コラム一括削除
+```
+
+#### ユーザー側API
+```
+GET  /flyers/list              # チラシ一覧取得
+GET  /flyers/list/{flyerId}    # チラシ詳細取得
+POST /flyers/recipe/{flyerId}  # AIレシピ提案
+GET  /articles/list            # コラム一覧取得
+GET  /products/list            # 商品一覧取得
+```
 
 ## Swaggerでの表示方法
 
@@ -113,7 +145,7 @@ docker run -p 8080:8080 -e SWAGGER_JSON=/api/api-design-user.yaml \
 
 ## 特記事項
 
-### AIレシピ提案API (`POST /flyers/{flyerId}/recipe`)
+### AIレシピ提案API (`POST /flyers/recipe/{flyerId}`)
 
 このエンドポイントは以下の処理を行います：
 
@@ -131,6 +163,16 @@ docker run -p 8080:8080 -e SWAGGER_JSON=/api/api-design-user.yaml \
 - **企業管理者**: 自社（companyId）のデータのみアクセス可能
 - **店舗ユーザー**: 自店舗（storeId）のデータのみアクセス可能
 
+### エラーレスポンス
+
+全てのAPIエンドポイントは以下のエラーレスポンスに対応しています：
+
+- **400 Bad Request**: リクエストが不正
+- **401 Unauthorized**: 認証が必要
+- **403 Forbidden**: 権限不足
+- **404 Not Found**: リソースが見つからない
+- **500 Internal Server Error**: サーバー内部エラー
+
 ## 次のステップ
 
 1. これらのYAMLファイルを確認
@@ -139,6 +181,21 @@ docker run -p 8080:8080 -e SWAGGER_JSON=/api/api-design-user.yaml \
 4. バックエンド実装時の参照として使用
 
 ## 変更履歴
+
+- 2025-01-XX: APIパス命名規則を変更、500エラー追加、ログイン中の管理者情報取得API削除
+  - **APIパス命名規則を変更**
+    - 機能を先頭に配置: `/{機能名}/{操作}`
+    - 一覧: `/list`、追加: `/add`、詳細: `/list/{id}`、更新: `/update/{id}`、削除: `/delete/{id}`
+  - **500エラーレスポンスを全APIに追加**
+    - 全エンドポイントで `InternalServerError` レスポンスに対応
+  - **ログイン中の管理者情報取得API (`/auth/me`) を削除**
+    - ログインAPIで情報を返却しているため不要
+    - フロントエンドでの保持で十分
+  - **「新規作成」を「追加」に統一**
+    - summary を「◯◯追加」に変更
+    - ユーザー登録は「登録」のまま
+  - **DELETEリクエストのrequestBodyエラーを修正**
+    - 一括削除APIをクエリパラメータ方式に変更
 
 - 2024-01-XX: 管理者ログアウトAPI削除
   - フロントエンドでトークン削除により対応

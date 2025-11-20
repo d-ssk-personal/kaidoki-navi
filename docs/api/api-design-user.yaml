@@ -82,6 +82,8 @@ paths:
                     $ref: '#/components/schemas/User'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /auth/logout:
     post:
@@ -103,12 +105,14 @@ paths:
                   message:
                     type: string
                     example: ログアウトしました
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /auth/register:
     post:
       tags:
         - 認証
-      summary: ユーザー新規登録
+      summary: ユーザー登録
       description: 新規ユーザーを登録します
       operationId: register
       requestBody:
@@ -149,9 +153,11 @@ paths:
                     $ref: '#/components/schemas/User'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ==================== チラシ ====================
-  /flyers:
+  /flyers/list:
     get:
       tags:
         - チラシ
@@ -209,8 +215,10 @@ paths:
                       $ref: '#/components/schemas/Flyer'
                   pagination:
                     $ref: '#/components/schemas/Pagination'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /flyers/{flyerId}:
+  /flyers/list/{flyerId}:
     get:
       tags:
         - チラシ
@@ -234,8 +242,10 @@ paths:
                 $ref: '#/components/schemas/FlyerDetail'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /flyers/{flyerId}/recipe:
+  /flyers/recipe/{flyerId}:
     post:
       tags:
         - チラシ
@@ -311,9 +321,11 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Flyer'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ==================== コラム ====================
-  /articles:
+  /articles/list:
     get:
       tags:
         - コラム
@@ -374,8 +386,10 @@ paths:
                       $ref: '#/components/schemas/Article'
                   pagination:
                     $ref: '#/components/schemas/Pagination'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /articles/{articleId}:
+  /articles/list/{articleId}:
     get:
       tags:
         - コラム
@@ -399,6 +413,8 @@ paths:
                 $ref: '#/components/schemas/ArticleDetail'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /articles/latest:
     get:
@@ -428,6 +444,8 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Article'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ==================== マイページ ====================
   /users/me:
@@ -448,6 +466,10 @@ paths:
                 $ref: '#/components/schemas/User'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/update/me:
     put:
       tags:
         - マイページ
@@ -479,8 +501,10 @@ paths:
                 $ref: '#/components/schemas/User'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /users/me/favorite-stores:
+  /users/favorite-stores/list:
     get:
       tags:
         - マイページ
@@ -503,6 +527,10 @@ paths:
                       $ref: '#/components/schemas/FavoriteStore'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/favorite-stores/add:
     post:
       tags:
         - マイページ
@@ -546,8 +574,10 @@ paths:
                   error:
                     type: string
                     example: すでにお気に入りに追加されています
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /users/me/favorite-stores/{storeId}:
+  /users/favorite-stores/delete/{storeId}:
     delete:
       tags:
         - マイページ
@@ -579,7 +609,11 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-    patch:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/favorite-stores/update/{storeId}:
+    put:
       tags:
         - マイページ
       summary: お気に入り店舗の通知設定更新
@@ -618,8 +652,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /users/me/notification-settings:
+  /users/notification-settings:
     get:
       tags:
         - マイページ
@@ -637,6 +673,10 @@ paths:
                 $ref: '#/components/schemas/NotificationSettings'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/notification-settings/update:
     put:
       tags:
         - マイページ
@@ -660,9 +700,11 @@ paths:
                 $ref: '#/components/schemas/NotificationSettings'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ==================== 商品 ====================
-  /products:
+  /products/list:
     get:
       tags:
         - 商品
@@ -710,8 +752,10 @@ paths:
                       $ref: '#/components/schemas/Product'
                   pagination:
                     $ref: '#/components/schemas/Pagination'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /products/{productId}:
+  /products/list/{productId}:
     get:
       tags:
         - 商品
@@ -737,8 +781,10 @@ paths:
                 $ref: '#/components/schemas/ProductDetail'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /products/{productId}/price-history:
+  /products/price-history/{productId}:
     get:
       tags:
         - 商品
@@ -791,9 +837,11 @@ paths:
                           example: スーパーA
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ==================== 店舗 ====================
-  /stores:
+  /stores/list:
     get:
       tags:
         - 店舗
@@ -851,8 +899,10 @@ paths:
                       $ref: '#/components/schemas/Store'
                   pagination:
                     $ref: '#/components/schemas/Pagination'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /stores/{storeId}:
+  /stores/list/{storeId}:
     get:
       tags:
         - 店舗
@@ -876,8 +926,10 @@ paths:
                 $ref: '#/components/schemas/StoreDetail'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
-  /stores/{storeId}/flyers:
+  /stores/flyers/{storeId}:
     get:
       tags:
         - 店舗
@@ -923,6 +975,8 @@ paths:
                     $ref: '#/components/schemas/Pagination'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 # ==================== コンポーネント ====================
 components:
