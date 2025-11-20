@@ -1,21 +1,24 @@
 <template>
-  <div class="flyer-form">
-    <!-- パンくずリスト -->
-    <nav class="breadcrumb">
-      <router-link to="/admin" class="breadcrumb-item">管理者トップ</router-link>
-      <span class="breadcrumb-separator">›</span>
-      <router-link to="/admin/flyers" class="breadcrumb-item">チラシ管理</router-link>
-      <span class="breadcrumb-separator">›</span>
-      <span class="breadcrumb-item active">{{ isEditMode ? 'チラシ編集' : 'チラシ追加' }}</span>
-    </nav>
-
-    <div class="page-header">
-      <h1 class="page-title">{{ isEditMode ? 'チラシ編集' : 'チラシ追加' }}</h1>
-      <p class="page-description">チラシ情報を入力してください</p>
+  <div class="admin-flyer-form">
+    <div class="admin-header">
+      <div class="header-left">
+        <h1 class="page-title">{{ isEditMode ? 'チラシ編集' : 'チラシ追加' }}</h1>
+        <!-- パンくずリスト -->
+        <nav class="breadcrumb">
+          <router-link to="/admin">管理画面</router-link>
+          <span class="separator">›</span>
+          <router-link to="/admin/flyers">チラシ管理</router-link>
+          <span class="separator">›</span>
+          <span class="current">{{ isEditMode ? 'チラシ編集' : 'チラシ追加' }}</span>
+        </nav>
+      </div>
+      <button @click="handleLogout" class="logout-button">
+        ログアウト
+      </button>
     </div>
 
-    <div class="form-container">
-      <form @submit.prevent="showConfirmModal" class="flyer-form-content">
+    <div class="page-content">
+      <form @submit.prevent="showConfirmModal" class="flyer-form">
         <!-- 企業ID -->
         <div class="form-group">
           <label class="form-label">企業ID</label>
@@ -183,73 +186,87 @@
 
         <!-- フォームアクション -->
         <div class="form-actions">
-          <router-link to="/admin/flyers" class="btn-cancel">
+          <button
+            type="button"
+            @click="goBack"
+            class="btn btn-cancel"
+          >
             キャンセル
-          </router-link>
-          <button type="submit" class="btn-submit">
-            {{ isEditMode ? '更新' : '登録' }}
+          </button>
+          <button type="submit" class="btn btn-submit">
+            登録内容を確認
           </button>
         </div>
       </form>
     </div>
 
     <!-- 確認モーダル -->
-    <div v-if="showModal" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
-        <h2 class="modal-title">確認</h2>
-        <p class="modal-message">
-          この内容で{{ isEditMode ? '更新' : '登録' }}しますか？
-        </p>
-        <div class="modal-details">
-          <div class="detail-row">
-            <span class="detail-label">企業ID:</span>
-            <span class="detail-value">{{ form.companyId }}</span>
+    <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">登録内容の確認</h2>
+        </div>
+
+        <div class="modal-body">
+          <div class="confirm-item">
+            <span class="confirm-label">企業ID:</span>
+            <span class="confirm-value">{{ form.companyId }}</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">企業名:</span>
-            <span class="detail-value">{{ form.companyName }}</span>
+
+          <div class="confirm-item">
+            <span class="confirm-label">企業名:</span>
+            <span class="confirm-value">{{ form.companyName }}</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">店舗ID:</span>
-            <span class="detail-value">{{ form.storeId }}</span>
+
+          <div class="confirm-item">
+            <span class="confirm-label">店舗ID:</span>
+            <span class="confirm-value">{{ form.storeId }}</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">店舗名:</span>
-            <span class="detail-value">{{ form.storeName }}</span>
+
+          <div class="confirm-item">
+            <span class="confirm-label">店舗名:</span>
+            <span class="confirm-value">{{ form.storeName }}</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">住所:</span>
-            <span class="detail-value">{{ form.address }}</span>
+
+          <div class="confirm-item">
+            <span class="confirm-label">住所:</span>
+            <span class="confirm-value">{{ form.address }}</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">チラシタイトル:</span>
-            <span class="detail-value">{{ form.title }}</span>
+
+          <div class="confirm-item">
+            <span class="confirm-label">チラシタイトル:</span>
+            <span class="confirm-value">{{ form.title }}</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">チラシ画像:</span>
-            <span class="detail-value">{{ form.images.length }}枚</span>
+
+          <div class="confirm-item">
+            <span class="confirm-label">チラシ画像:</span>
+            <span class="confirm-value">{{ form.images.length }}枚</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">掲載期間:</span>
-            <span class="detail-value">
+
+          <div class="confirm-item">
+            <span class="confirm-label">掲載期間:</span>
+            <span class="confirm-value">
               {{ formatDate(form.periodFrom) }} 〜 {{ formatDate(form.periodTo) }}
             </span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">チラシカテゴリ:</span>
-            <span class="detail-value">{{ getCategoryLabel(form.category) }}</span>
+
+          <div class="confirm-item">
+            <span class="confirm-label">チラシカテゴリ:</span>
+            <span class="confirm-value">{{ getCategoryLabel(form.category) }}</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">掲載ステータス:</span>
-            <span class="detail-value">{{ getStatusLabel(form.status) }}</span>
+
+          <div class="confirm-item">
+            <span class="confirm-label">掲載ステータス:</span>
+            <span class="confirm-value">{{ getStatusLabel(form.status) }}</span>
           </div>
         </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-modal-cancel" @click="closeModal">
+
+        <div class="modal-footer">
+          <button @click="closeModal" class="btn btn-cancel">
             キャンセル
           </button>
-          <button type="button" class="btn-modal-confirm" @click="submitForm">
-            {{ isEditMode ? '更新' : '登録' }}
+          <button @click="submitForm" class="btn btn-submit">
+            {{ isEditMode ? '更新する' : '登録する' }}
           </button>
         </div>
       </div>
@@ -445,16 +462,50 @@ export default {
         scheduled: '掲載予定'
       }
       return labels[status] || status
+    },
+    goBack() {
+      if (confirm('入力内容は破棄されます。よろしいですか？')) {
+        this.$router.push('/admin/flyers')
+      }
+    },
+    handleLogout() {
+      if (confirm('ログアウトしますか？')) {
+        this.adminStore.logout()
+        this.$router.push('/admin/login')
+      }
     }
   }
 }
 </script>
 
 <style scoped>
-.flyer-form {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 24px;
+.admin-flyer-form {
+  min-height: 100vh;
+  background-color: var(--bg-light);
+}
+
+.admin-header {
+  background-color: white;
+  padding: 24px 32px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin: 0;
 }
 
 /* パンくずリスト */
@@ -462,78 +513,71 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 24px;
   font-size: 14px;
   color: var(--text-secondary);
 }
 
-.breadcrumb-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  color: var(--text-secondary);
-  transition: color 0.3s ease;
-}
-
-.breadcrumb-item:hover:not(.active) {
+.breadcrumb a {
   color: var(--primary-color);
+  text-decoration: none;
+  transition: opacity 0.3s ease;
 }
 
-.breadcrumb-item.active {
-  color: var(--text-primary);
-  font-weight: 600;
+.breadcrumb a:hover {
+  opacity: 0.7;
+  text-decoration: underline;
 }
 
-.breadcrumb-separator {
+.breadcrumb .separator {
   color: var(--text-secondary);
 }
 
-/* ページヘッダー */
-.page-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 40px;
+.breadcrumb .current {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.logout-button {
+  padding: 10px 20px;
+  background-color: var(--danger-color);
   color: white;
-  margin-bottom: 32px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.page-title {
-  font-size: 32px;
-  font-weight: bold;
-  margin-bottom: 8px;
+.logout-button:hover {
+  background-color: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
-.page-description {
-  font-size: 16px;
-  opacity: 0.95;
+.page-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 32px;
 }
 
-/* フォームコンテナ */
-.form-container {
+.flyer-form {
   background-color: white;
-  border-radius: 12px;
   padding: 32px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.flyer-form-content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-/* フォームグループ */
 .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin-bottom: 24px;
 }
 
 .form-label {
+  display: block;
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
+  margin-bottom: 8px;
 }
 
 .form-label.required::after {
@@ -543,23 +587,25 @@ export default {
 
 .form-input,
 .form-select {
+  width: 100%;
   padding: 12px 16px;
   border: 2px solid var(--border-color);
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 16px;
+  font-family: inherit;
+  outline: none;
   transition: border-color 0.3s ease;
 }
 
 .form-input:focus,
 .form-select:focus {
-  outline: none;
   border-color: var(--primary-color);
 }
 
 .form-input:disabled {
-  background-color: #f3f4f6;
-  color: #6b7280;
+  background-color: var(--bg-light);
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* 掲載期間の横並び表示 */
@@ -582,7 +628,7 @@ export default {
 .error-message {
   color: var(--danger-color);
   font-size: 13px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 /* 画像アップロード */
@@ -669,35 +715,31 @@ export default {
 /* フォームアクション */
 .form-actions {
   display: flex;
+  gap: 16px;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 16px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border-color);
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 2px solid var(--border-color);
 }
 
-.btn-cancel,
-.btn-submit {
+.btn {
   padding: 12px 32px;
   border: none;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
 }
 
 .btn-cancel {
-  background-color: white;
+  background-color: var(--bg-light);
   color: var(--text-primary);
   border: 2px solid var(--border-color);
 }
 
 .btn-cancel:hover {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  background-color: #e5e7eb;
 }
 
 .btn-submit {
@@ -705,10 +747,15 @@ export default {
   color: white;
 }
 
-.btn-submit:hover {
-  background-color: #5a67d8;
+.btn-submit:hover:not(:disabled) {
+  background-color: var(--primary-dark);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* モーダル */
@@ -718,132 +765,104 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 20px;
 }
 
 .modal-content {
   background-color: white;
-  border-radius: 12px;
-  padding: 32px;
-  max-width: 500px;
-  width: 90%;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  padding: 24px;
+  border-bottom: 2px solid var(--border-color);
 }
 
 .modal-title {
   font-size: 24px;
   font-weight: bold;
   color: var(--text-primary);
-  margin-bottom: 16px;
 }
 
-.modal-message {
-  font-size: 16px;
-  color: var(--text-secondary);
-  margin-bottom: 24px;
+.modal-body {
+  padding: 24px;
 }
 
-.modal-details {
-  background-color: var(--bg-light);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
+.confirm-item {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
   border-bottom: 1px solid var(--border-color);
 }
 
-.detail-row:last-child {
+.confirm-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
   border-bottom: none;
 }
 
-.detail-label {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.detail-value {
-  color: var(--text-secondary);
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.btn-modal-cancel,
-.btn-modal-confirm {
-  padding: 10px 24px;
-  border: none;
-  border-radius: 8px;
+.confirm-label {
+  display: block;
   font-size: 14px;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
 }
 
-.btn-modal-cancel {
-  background-color: white;
+.confirm-value {
+  display: block;
+  font-size: 16px;
   color: var(--text-primary);
-  border: 2px solid var(--border-color);
 }
 
-.btn-modal-cancel:hover {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+.modal-footer {
+  padding: 24px;
+  border-top: 2px solid var(--border-color);
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
 }
 
-.btn-modal-confirm {
-  background-color: var(--primary-color);
-  color: white;
-}
-
-.btn-modal-confirm:hover {
-  background-color: #5a67d8;
-}
-
-/* レスポンシブ */
 @media (max-width: 768px) {
-  .flyer-form {
-    padding: 16px;
-  }
-
-  .page-header {
-    padding: 24px;
+  .admin-header {
+    padding: 16px 20px;
   }
 
   .page-title {
-    font-size: 24px;
+    font-size: 22px;
   }
 
-  .form-container {
+  .page-content {
+    padding: 24px 20px;
+  }
+
+  .flyer-form {
     padding: 20px;
   }
 
   .form-actions {
-    flex-direction: column;
+    flex-direction: column-reverse;
   }
 
-  .btn-cancel,
-  .btn-submit {
+  .btn {
     width: 100%;
-  }
-
-  .modal-content {
-    padding: 24px;
   }
 
   .image-previews {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
   }
 }
 </style>
