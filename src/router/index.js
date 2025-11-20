@@ -1,8 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import TopPage from '@/views/TopPage.vue'
-import ProductList from '@/views/ProductList.vue'
 import StoreList from '@/views/StoreList.vue'
-import ItemDetail from '@/views/ItemDetail.vue'
 import ArticleDetail from '@/views/ArticleDetail.vue'
 import Legal from '@/views/Legal.vue'
 import Login from '@/views/Login.vue'
@@ -32,19 +30,9 @@ const routes = [
     component: TopPage
   },
   {
-    path: '/products',
-    name: 'ProductList',
-    component: ProductList
-  },
-  {
     path: '/stores',
     name: 'StoreList',
     component: StoreList
-  },
-  {
-    path: '/item/:id',
-    name: 'ItemDetail',
-    component: ItemDetail
   },
   {
     path: '/article/:id',

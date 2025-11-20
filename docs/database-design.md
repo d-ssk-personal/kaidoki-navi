@@ -83,10 +83,8 @@ test@example.com | 002    | 佐藤花子
 4. [Stores](#4-stores---店舗)
 5. [Flyers](#5-flyers---チラシ)
 6. [Articles](#6-articles---コラム)
-7. [Products](#7-products---商品)
-8. [PriceHistory](#8-pricehistory---価格履歴)
-9. [FavoriteStores](#9-favoritstores---お気に入り店舗)
-10. [Recipes](#10-recipes---aiレシピ)
+7. [FavoriteStores](#7-favoritstores---お気に入り店舗)
+8. [Recipes](#8-recipes---aiレシピ)
 
 ---
 
@@ -145,6 +143,7 @@ response = table.query(
 | name | String | ○ | ユーザー名 | `山田太郎` |
 | passwordHash | String | ○ | パスワードハッシュ（bcrypt） | `$2b$12$...` |
 | favoriteStoreIds | List<String> |  | お気に入り店舗IDリスト | `["store_001", "store_002"]` |
+| notificationFrequency | String |  | 通知頻度 | `realtime` / `morning` / `evening` |
 | createdAt | String | ○ | 作成日時（ISO 8601） | `2024-01-01T00:00:00Z` |
 | updatedAt | String | ○ | 更新日時（ISO 8601） | `2024-01-15T00:00:00Z` |
 
@@ -662,149 +661,7 @@ response = table.query(
 
 ---
 
-## 7. Products - 商品
-
-### テーブル名
-`products`
-
-### 説明
-商品情報を管理
-
-### キー設計
-
-| 属性名 | 型 | キー種別 | 説明 |
-|--------|-----|----------|------|
-| productId | String | PK (Partition Key) | 商品ID（UUID） |
-
-### GSI（Global Secondary Index）
-
-#### GSI-1: CategoryIndex
-- **Purpose**: カテゴリで商品検索
-- **PK**: category (String)
-- **SK**: productName (String)
-- **Projection**: ALL
-
-**なぜ必要？**
-ユーザー側のアプリで「カテゴリ別の商品一覧」を表示する機能があります（例: 「精肉」カテゴリの商品のみ表示）。
-
-**使用例:**
-```python
-# ✅ 「精肉」カテゴリの商品を取得
-response = table.query(
-    IndexName='CategoryIndex',
-    KeyConditionExpression='category = :category',
-    ExpressionAttributeValues={':category': '精肉'}
-)
-
-# ✅ 「精肉」カテゴリで商品名が「豚」で始まる商品を検索
-response = table.query(
-    IndexName='CategoryIndex',
-    KeyConditionExpression='category = :category AND begins_with(productName, :name)',
-    ExpressionAttributeValues={
-        ':category': '精肉',
-        ':name': '豚'
-    }
-)
-```
-
-**SK（productName）の役割:**
-- 商品名のアルファベット順（50音順）でソート
-- 部分一致検索（`begins_with`）が可能
-
-**結論**: カテゴリ別の商品検索と、商品名による並べ替え・絞り込みに必要です。
-
-### 属性
-
-| 属性名 | 型 | 必須 | 説明 | 例 |
-|--------|-----|------|------|-----|
-| productId | String | ○ | 商品ID（UUID） | `prod_001` |
-| name | String | ○ | 商品名 | `豚バラ肉` |
-| category | String | ○ | カテゴリ | `精肉` |
-| currentPrice | Number | ○ | 現在価格 | `298` |
-| previousPrice | Number |  | 前回価格 | `320` |
-| lowestPrice | Number | ○ | 最安値 | `198` |
-| lowestStoreName | String |  | 最安値の店舗名 | `スーパーA` |
-| lastUpdated | String | ○ | 最終更新日時 | `2024-01-15T12:00:00Z` |
-| createdAt | String | ○ | 作成日時 | `2024-01-01T00:00:00Z` |
-| updatedAt | String | ○ | 更新日時 | `2024-01-15T00:00:00Z` |
-
-### アクセスパターン
-1. 商品IDで商品情報取得（PK）
-2. カテゴリで商品検索（GSI-1）
-3. 商品名で検索（GSI-1のSK + FilterExpression）
-
-### 備考
-- AI分析レポートは商品詳細取得時にリアルタイム生成するため、DBには保存しない
-
----
-
-## 8. PriceHistory - 価格履歴
-
-### テーブル名
-`price-history`
-
-### 説明
-商品の価格推移を記録
-
-### キー設計
-
-| 属性名 | 型 | キー種別 | 説明 |
-|--------|-----|----------|------|
-| productId | String | PK (Partition Key) | 商品ID |
-| timestamp | String | SK (Sort Key) | タイムスタンプ（ISO 8601） |
-
-### GSI（Global Secondary Index）
-なし（PKとSKで効率的にクエリ可能）
-
-**なぜGSIが不要？**
-
-このテーブルは、**PK（productId）とSK（timestamp）の組み合わせだけで、必要なクエリがすべて実行できる**ためGSIが不要です。
-
-**アクセスパターン:**
-```python
-# ✅ 商品「prod_001」の全価格履歴を取得
-response = table.query(
-    KeyConditionExpression='productId = :productId',
-    ExpressionAttributeValues={':productId': 'prod_001'},
-    ScanIndexForward=False  # 新しい順
-)
-
-# ✅ 商品「prod_001」の2024年1月の価格履歴を取得（範囲検索）
-response = table.query(
-    KeyConditionExpression='productId = :productId AND #ts BETWEEN :start AND :end',
-    ExpressionAttributeNames={'#ts': 'timestamp'},
-    ExpressionAttributeValues={
-        ':productId': 'prod_001',
-        ':start': '2024-01-01T00:00:00Z',
-        ':end': '2024-01-31T23:59:59Z'
-    }
-)
-```
-
-**重要な設計ポイント:**
-- **PK**: 商品IDで、同じ商品の履歴をまとめて取得
-- **SK**: タイムスタンプで、時系列順に並べ替え・期間指定が可能
-
-この設計により、「商品ごとの価格推移グラフ」を表示する際に、追加のGSIなしで効率的にデータを取得できます。
-
-### 属性
-
-| 属性名 | 型 | 必須 | 説明 | 例 |
-|--------|-----|------|------|-----|
-| productId | String | ○ | 商品ID | `prod_001` |
-| timestamp | String | ○ | タイムスタンプ（ISO 8601） | `2024-01-15T00:00:00Z` |
-| price | Number | ○ | 価格 | `298` |
-| storeId | String | ○ | 店舗ID | `store_001` |
-| storeName | String | ○ | 店舗名（非正規化） | `スーパーA` |
-| date | String | ○ | 日付（YYYY-MM-DD） | `2024-01-15` |
-
-### アクセスパターン
-1. 商品IDとタイムスタンプ範囲で価格履歴取得（PK + SK）
-2. 期間指定で価格推移取得（PK + SK range query）
-
----
-
-## 9. FavoriteStores - お気に入り店舗
+## 7. FavoriteStores - お気に入り店舗
 
 ### テーブル名
 `favorite-stores`
@@ -888,7 +745,7 @@ table.delete_item(
 
 ---
 
-## 10. Recipes - AIレシピ
+## 8. Recipes - AIレシピ
 
 ### テーブル名
 `recipes`
@@ -970,22 +827,30 @@ ttl = int(time.time()) + (30 * 24 * 60 * 60)
 ## 通知設定の管理
 
 ### 実装方法
-ユーザーの通知設定は **Users テーブル** に以下の属性を追加して管理します。
 
-### 追加属性
+通知設定は2つのテーブルで管理します：
 
-| 属性名 | 型 | 必須 | 説明 | 例 |
-|--------|-----|------|------|-----|
-| notificationSettings | Map |  | 通知設定 | 以下参照 |
+1. **Usersテーブル**: グローバルな通知頻度設定
+   - `notificationFrequency` (String): 通知頻度（`realtime` / `morning` / `evening`）
 
-#### notificationSettings の構造
-```json
-{
-  "categories": ["特売情報", "新着チラシ", "価格変動"],
-  "frequency": "daily",
-  "priceChangeThreshold": 10
-}
-```
+2. **FavoriteStoresテーブル**: 店舗ごとの通知トグル
+   - `notificationEnabled` (Boolean): 店舗ごとに通知を有効/無効にする
+
+### 通知頻度の詳細
+
+| 値 | ラベル | 説明 |
+|---|---|---|
+| `realtime` | リアルタイム | 新着チラシが追加されたらすぐに通知 |
+| `morning` | 毎朝 | 毎朝8時に前日の新着をまとめて通知 |
+| `evening` | 毎夕 | 毎夕18時にその日の新着をまとめて通知 |
+
+### 通知の動作
+
+通知は以下の条件を **すべて満たす** 場合に送信されます：
+1. ユーザーが通知頻度を設定している（`notificationFrequency`が設定されている）
+2. 店舗がお気に入りに登録されている（`favorite-stores`テーブルにエントリが存在）
+3. その店舗の通知が有効になっている（`notificationEnabled = true`）
+4. 設定された頻度のタイミングで新着チラシがある
 
 ---
 
