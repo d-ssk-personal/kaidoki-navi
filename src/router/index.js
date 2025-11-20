@@ -150,7 +150,15 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    // ブラウザの戻る/進むボタンの場合は保存された位置に戻る
+    if (savedPosition) {
+      return savedPosition
+    }
+    // それ以外の場合は常にページトップへ
+    return { top: 0, left: 0 }
+  }
 })
 
 export default router

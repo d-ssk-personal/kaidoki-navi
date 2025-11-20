@@ -13,16 +13,18 @@
 
       <nav class="nav">
         <router-link to="/top" class="nav-link">ホーム</router-link>
+        <template v-if="!authStore.isLoggedIn">
+          <router-link to="/login" class="nav-link">ログイン</router-link>
+        </template>
+        <template v-else>
+          <router-link to="/mypage" class="nav-link">マイページ</router-link>
+        </template>
         <router-link to="/legal" class="nav-link">利用規約</router-link>
         <router-link to="/for-business" class="nav-link business-link">法人のお客様へ</router-link>
       </nav>
 
       <div class="auth-section">
-        <template v-if="!authStore.isLoggedIn">
-          <router-link to="/login" class="auth-btn login-btn">ログイン</router-link>
-        </template>
-        <template v-else>
-          <router-link to="/mypage" class="auth-btn mypage-btn">マイページ</router-link>
+        <template v-if="authStore.isLoggedIn">
           <button class="auth-btn logout-btn" @click="handleLogout">ログアウト</button>
         </template>
       </div>
@@ -34,14 +36,16 @@
 
     <div v-if="showMobileMenu" class="mobile-menu">
       <router-link to="/top" class="mobile-nav-link" @click="closeMobileMenu">ホーム</router-link>
-      <router-link to="/legal" class="mobile-nav-link" @click="closeMobileMenu">利用規約</router-link>
-      <router-link to="/for-business" class="mobile-nav-link" @click="closeMobileMenu">法人のお客様へ</router-link>
-      <div class="mobile-menu-divider"></div>
       <template v-if="!authStore.isLoggedIn">
         <router-link to="/login" class="mobile-nav-link" @click="closeMobileMenu">ログイン</router-link>
       </template>
       <template v-else>
         <router-link to="/mypage" class="mobile-nav-link" @click="closeMobileMenu">マイページ</router-link>
+      </template>
+      <router-link to="/legal" class="mobile-nav-link" @click="closeMobileMenu">利用規約</router-link>
+      <router-link to="/for-business" class="mobile-nav-link" @click="closeMobileMenu">法人のお客様へ</router-link>
+      <template v-if="authStore.isLoggedIn">
+        <div class="mobile-menu-divider"></div>
         <button class="mobile-nav-link logout-link" @click="handleLogout">ログアウト</button>
       </template>
     </div>

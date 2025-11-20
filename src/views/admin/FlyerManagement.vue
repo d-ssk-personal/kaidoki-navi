@@ -162,7 +162,14 @@
         <p>チラシが見つかりませんでした</p>
       </div>
 
-      <div v-else class="table-container">
+      <div v-else
+        class="table-container"
+        ref="tableContainer"
+        @mousedown="onMouseDown"
+        @mousemove="onMouseMove"
+        @mouseup="onMouseUp"
+        @mouseleave="onMouseUp"
+      >
       <table class="flyer-table">
         <thead>
           <tr>
@@ -187,7 +194,7 @@
         </thead>
         <tbody>
           <tr
-            v-for="flyer in filteredFlyers"
+            v-for="flyer in paginatedFlyers"
             :key="flyer.id"
             :class="{ selected: selectedIds.includes(flyer.id) }"
           >
@@ -231,6 +238,46 @@
         </tbody>
       </table>
       </div>
+
+      <!-- ページネーション -->
+      <div v-if="totalPages > 1" class="pagination">
+        <button
+          @click="goToFirstPage"
+          :disabled="currentPage === 1"
+          class="pagination-btn"
+        >
+          ≪
+        </button>
+        <button
+          @click="goToPrevPage"
+          :disabled="currentPage === 1"
+          class="pagination-btn"
+        >
+          ‹
+        </button>
+        <button
+          v-for="page in displayedPages"
+          :key="page"
+          @click="goToPage(page)"
+          :class="['pagination-btn', { active: page === currentPage }]"
+        >
+          {{ page }}
+        </button>
+        <button
+          @click="goToNextPage"
+          :disabled="currentPage === totalPages"
+          class="pagination-btn"
+        >
+          ›
+        </button>
+        <button
+          @click="goToLastPage"
+          :disabled="currentPage === totalPages"
+          class="pagination-btn"
+        >
+          ≫
+        </button>
+      </div>
     </div>
     </div>
   </div>
@@ -260,6 +307,12 @@ export default {
       },
       selectedIds: [],
       bulkStatusChange: '',
+      currentPage: 1,
+      itemsPerPage: 50,
+      isDragging: false,
+      startX: 0,
+      scrollLeft: 0,
+      searchTriggered: false,
       flyers: [
         {
           id: 1,
@@ -331,6 +384,11 @@ export default {
   },
   computed: {
     filteredFlyers() {
+      // 検索ボタンが押されていない場合は全件表示
+      if (!this.searchTriggered) {
+        return [...this.flyers]
+      }
+
       let results = [...this.flyers]
 
       // 企業IDフィルター
@@ -402,8 +460,40 @@ export default {
 
       return results
     },
+    paginatedFlyers() {
+      const start = (this.currentPage - 1) * this.itemsPerPage
+      const end = start + this.itemsPerPage
+      return this.filteredFlyers.slice(start, end)
+    },
+    totalPages() {
+      return Math.ceil(this.filteredFlyers.length / this.itemsPerPage)
+    },
+    displayedPages() {
+      const pages = []
+      const total = this.totalPages
+      const current = this.currentPage
+
+      // 現在のページの前後2ページを表示（最大5ページ）
+      let start = Math.max(1, current - 2)
+      let end = Math.min(total, current + 2)
+
+      // 5ページ表示できるように調整
+      if (end - start < 4) {
+        if (start === 1) {
+          end = Math.min(total, start + 4)
+        } else if (end === total) {
+          start = Math.max(1, end - 4)
+        }
+      }
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+
+      return pages
+    },
     isAllSelected() {
-      return this.filteredFlyers.length > 0 &&
+      return this.paginatedFlyers.length > 0 &&
         this.selectedIds.length === this.filteredFlyers.length
     }
   },
@@ -416,8 +506,48 @@ export default {
   },
   methods: {
     search() {
-      // フィルターは computed で自動適用されるため、特に処理不要
-      // 必要に応じて API 呼び出しなどを追加
+      this.searchTriggered = true
+      this.currentPage = 1
+    },
+    // ページネーション関連
+    goToPage(page) {
+      this.currentPage = page
+    },
+    goToFirstPage() {
+      this.currentPage = 1
+    },
+    goToLastPage() {
+      this.currentPage = this.totalPages
+    },
+    goToPrevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--
+      }
+    },
+    goToNextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++
+      }
+    },
+    // ドラッグスクロール関連
+    onMouseDown(e) {
+      this.isDragging = true
+      this.startX = e.pageX - this.$refs.tableContainer.offsetLeft
+      this.scrollLeft = this.$refs.tableContainer.scrollLeft
+      this.$refs.tableContainer.style.cursor = 'grabbing'
+    },
+    onMouseMove(e) {
+      if (!this.isDragging) return
+      e.preventDefault()
+      const x = e.pageX - this.$refs.tableContainer.offsetLeft
+      const walk = (x - this.startX) * 2
+      this.$refs.tableContainer.scrollLeft = this.scrollLeft - walk
+    },
+    onMouseUp() {
+      this.isDragging = false
+      if (this.$refs.tableContainer) {
+        this.$refs.tableContainer.style.cursor = 'grab'
+      }
     },
     resetFilters() {
       this.filters = {
@@ -804,6 +934,12 @@ export default {
 /* テーブル */
 .table-container {
   overflow-x: auto;
+  cursor: grab;
+  user-select: none;
+}
+
+.table-container:active {
+  cursor: grabbing;
 }
 
 .flyer-table {
@@ -952,6 +1088,49 @@ export default {
 .btn-delete:hover {
   background-color: var(--bg-light);
   transform: scale(1.1);
+}
+
+/* ページネーション */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid var(--border-color);
+}
+
+.pagination-btn {
+  min-width: 40px;
+  height: 40px;
+  padding: 8px 12px;
+  background-color: white;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.pagination-btn.active {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

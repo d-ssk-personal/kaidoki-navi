@@ -4,43 +4,6 @@
     <div class="main-container">
       <!-- メインコンテンツ -->
       <main class="main-content">
-        <!-- 検索フォーム（表示/非表示切り替え可能） -->
-        <section v-if="showProductSearch" class="search-section">
-      <div class="search-container">
-        <h2 class="search-title">商品を検索</h2>
-
-        <div class="search-form">
-          <!-- カテゴリ検索 -->
-          <div class="category-filter">
-            <div class="category-chips">
-              <button
-                v-for="category in categories"
-                :key="category"
-                :class="['category-chip', { active: selectedCategory === category }]"
-                @click="selectCategory(category)"
-              >
-                {{ category }}
-              </button>
-            </div>
-          </div>
-
-          <!-- フリーワード検索 -->
-          <div class="search-input-wrapper">
-            <input
-              type="text"
-              v-model="searchQuery"
-              placeholder="商品名で検索（例: 牛乳、卵、パンなど）"
-              class="search-input"
-              @keyup.enter="performSearch"
-            />
-            <button class="search-button" @click="performSearch">
-              🔍 検索
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- チラシ検索セクション -->
     <section class="flyer-section">
       <!-- チラシ検索フォーム -->
@@ -162,13 +125,6 @@
 
       <!-- 家計・物価コラム -->
       <ArticleList :limit="8" />
-
-      <!-- 商品検索トグルボタン（下部に移動） -->
-      <div class="product-search-toggle">
-        <button class="toggle-button" @click="showProductSearch = !showProductSearch">
-          {{ showProductSearch ? '商品検索を非表示' : '商品検索を表示' }}
-        </button>
-      </div>
       </main>
 
       <!-- サイドバー -->
@@ -246,19 +202,6 @@ export default {
       products: [],
       loading: true,
       error: null,
-      searchQuery: '',
-      selectedCategory: '',
-      showProductSearch: false, // 商品検索の表示状態（初期は非表示）
-      categories: [
-        '飲料',
-        'お菓子・おつまみ',
-        '生鮮食品',
-        '冷蔵・冷凍',
-        '調味料',
-        'パン・シリアル',
-        '日用品',
-        'その他'
-      ],
       // コラム検索関連
       articleSearchQuery: '',
       articleCategories: [
@@ -430,25 +373,6 @@ export default {
       } finally {
         this.loading = false
       }
-    },
-    performSearch() {
-      // 商品一覧画面に遷移
-      const query = {
-        q: this.searchQuery,
-        category: this.selectedCategory
-      }
-      this.$router.push({
-        path: '/products',
-        query: query
-      })
-    },
-    selectCategory(category) {
-      if (this.selectedCategory === category) {
-        this.selectedCategory = ''
-      } else {
-        this.selectedCategory = category
-      }
-      // カテゴリ選択時は検索を実行しない
     },
     performFlyerSearch() {
       // 店舗検索結果一覧画面に遷移
@@ -717,123 +641,6 @@ export default {
 .main-content {
   flex: 1;
   min-width: 0;
-}
-
-/* 商品検索トグルボタン */
-.product-search-toggle {
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.toggle-button {
-  padding: 12px 24px;
-  background-color: white;
-  border: 2px solid var(--primary-color);
-  border-radius: 8px;
-  color: var(--primary-color);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.toggle-button:hover {
-  background-color: var(--primary-color);
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-/* 検索セクション */
-.search-section {
-  margin-bottom: 48px;
-}
-
-.search-container {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 40px;
-  color: white;
-}
-
-.search-title {
-  font-size: 28px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-.search-form {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.category-filter {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.category-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.category-chip {
-  padding: 8px 16px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  border-radius: 20px;
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.category-chip:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-}
-
-.category-chip.active {
-  background-color: white;
-  color: var(--primary-color);
-  border-color: white;
-}
-
-.search-input-wrapper {
-  display: flex;
-  gap: 12px;
-}
-
-.search-input {
-  flex: 1;
-  padding: 16px 20px;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  outline: none;
-}
-
-.search-button {
-  padding: 16px 32px;
-  background-color: white;
-  color: var(--primary-color);
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-}
-
-.search-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* チラシ検索セクション */
