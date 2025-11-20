@@ -89,27 +89,6 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /auth/logout:
-    post:
-      tags:
-        - 認証
-      summary: 管理者ログアウト
-      description: ログアウトしてトークンを無効化します
-      operationId: adminLogout
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: ログアウト成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: ログアウトしました
-
   /auth/me:
     get:
       tags:
