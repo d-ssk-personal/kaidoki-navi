@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Kaidoki Navi - 管理者側API
+  title: Chirashi Kitchen - 管理者側API
   description: |
-    買得ナビの管理者向けAPIドキュメント
+    Chirashi Kitchenの管理者向けAPIドキュメント
 
     このAPIは企業、店舗、チラシ、コラム、アカウントの管理機能を提供します。
 
@@ -22,12 +22,12 @@ info:
 
   version: 1.0.0
   contact:
-    name: Kaidoki Navi Admin API Support
+    name: Chirashi Kitchen Admin API Support
 
 servers:
-  - url: https://api.kaidoki-navi.com/v1/admin
+  - url: https://api.chirashi-kitchen.com/v1/admin
     description: 本番環境
-  - url: https://api-staging.kaidoki-navi.com/v1/admin
+  - url: https://api-staging.chirashi-kitchen.com/v1/admin
     description: ステージング環境
   - url: http://localhost:3000/api/v1/admin
     description: ローカル開発環境

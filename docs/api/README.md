@@ -1,6 +1,6 @@
-# 買得ナビ API設計書
+# Chirashi Kitchen API設計書
 
-このディレクトリには、買得ナビのAPI設計書（OpenAPI 3.0形式）が格納されています。
+このディレクトリには、Chirashi KitchenのAPI設計書（OpenAPI 3.0形式）が格納されています。
 
 ## ファイル構成
 
