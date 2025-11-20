@@ -1,15 +1,15 @@
 <template>
-  <div class="admin-store-form">
+  <div class="admin-company-form">
     <div class="admin-header">
       <div class="header-left">
-        <h1 class="page-title">{{ isEditMode ? '店舗編集' : '店舗追加' }}</h1>
+        <h1 class="page-title">{{ isEditMode ? '企業編集' : '企業追加' }}</h1>
         <!-- パンくずリスト -->
         <nav class="breadcrumb">
           <router-link to="/admin">管理画面</router-link>
           <span class="separator">›</span>
-          <router-link to="/admin/stores">店舗管理</router-link>
+          <router-link to="/admin/companies">企業管理</router-link>
           <span class="separator">›</span>
-          <span class="current">{{ isEditMode ? '店舗編集' : '店舗追加' }}</span>
+          <span class="current">{{ isEditMode ? '企業編集' : '企業追加' }}</span>
         </nav>
       </div>
       <button @click="handleLogout" class="logout-button">
@@ -18,7 +18,7 @@
     </div>
 
     <div class="page-content">
-      <form @submit.prevent="handleSubmit" class="store-form">
+      <form @submit.prevent="handleSubmit" class="company-form">
         <!-- 企業ID -->
         <div class="form-group">
           <label for="companyId" class="form-label required">企業ID</label>
@@ -33,29 +33,15 @@
           <p class="form-hint">企業IDは自動生成されます（変更不可）</p>
         </div>
 
-        <!-- 店舗ID -->
+        <!-- 企業名 -->
         <div class="form-group">
-          <label for="storeId" class="form-label required">店舗ID</label>
-          <input
-            id="storeId"
-            v-model="form.storeId"
-            type="text"
-            class="form-input"
-            placeholder="自動生成されます"
-            :disabled="true"
-          />
-          <p class="form-hint">店舗IDは自動生成されます（変更不可）</p>
-        </div>
-
-        <!-- 店舗名 -->
-        <div class="form-group">
-          <label for="name" class="form-label required">店舗名</label>
+          <label for="name" class="form-label required">企業名</label>
           <input
             id="name"
             v-model="form.name"
             type="text"
             class="form-input"
-            placeholder="店舗名を入力"
+            placeholder="企業名を入力"
             required
           />
         </div>
@@ -73,6 +59,19 @@
           />
         </div>
 
+        <!-- 担当者氏名 -->
+        <div class="form-group">
+          <label for="contactName" class="form-label required">担当者氏名</label>
+          <input
+            id="contactName"
+            v-model="form.contactName"
+            type="text"
+            class="form-input"
+            placeholder="担当者氏名を入力"
+            required
+          />
+        </div>
+
         <!-- 電話番号 -->
         <div class="form-group">
           <label for="phone" class="form-label required">電話番号</label>
@@ -86,41 +85,73 @@
           />
         </div>
 
-        <!-- 営業時間 -->
+        <!-- メールアドレス -->
         <div class="form-group">
-          <label for="businessHours" class="form-label">営業時間</label>
+          <label for="email" class="form-label required">メールアドレス</label>
           <input
-            id="businessHours"
-            v-model="form.businessHours"
-            type="text"
+            id="email"
+            v-model="form.email"
+            type="email"
             class="form-input"
-            placeholder="例: 9:00-21:00"
+            placeholder="example@company.co.jp"
+            required
           />
         </div>
 
-        <!-- ステータス -->
+        <!-- 契約状態 -->
         <div class="form-group">
-          <label class="form-label required">ステータス</label>
-          <div class="radio-group">
-            <label class="radio-label">
-              <input
-                type="radio"
-                v-model="form.status"
-                value="active"
-                class="radio-input"
-              />
-              <span class="radio-text">有効</span>
-            </label>
-            <label class="radio-label">
-              <input
-                type="radio"
-                v-model="form.status"
-                value="inactive"
-                class="radio-input"
-              />
-              <span class="radio-text">無効</span>
-            </label>
-          </div>
+          <label for="contractStatus" class="form-label required">契約状態</label>
+          <select
+            id="contractStatus"
+            v-model="form.contractStatus"
+            class="form-select"
+            required
+          >
+            <option value="">契約状態を選択</option>
+            <option value="active">有効</option>
+            <option value="expired">期限切れ</option>
+            <option value="suspended">停止中</option>
+          </select>
+        </div>
+
+        <!-- 契約プラン -->
+        <div class="form-group">
+          <label for="contractPlan" class="form-label required">契約プラン</label>
+          <select
+            id="contractPlan"
+            v-model="form.contractPlan"
+            class="form-select"
+            required
+          >
+            <option value="">契約プランを選択</option>
+            <option value="basic">ベーシック</option>
+            <option value="standard">スタンダード</option>
+            <option value="premium">プレミアム</option>
+          </select>
+        </div>
+
+        <!-- 契約開始日 -->
+        <div class="form-group">
+          <label for="contractStartDate" class="form-label required">契約開始日</label>
+          <input
+            id="contractStartDate"
+            v-model="form.contractStartDate"
+            type="date"
+            class="form-input"
+            required
+          />
+        </div>
+
+        <!-- 契約終了日 -->
+        <div class="form-group">
+          <label for="contractEndDate" class="form-label required">契約終了日</label>
+          <input
+            id="contractEndDate"
+            v-model="form.contractEndDate"
+            type="date"
+            class="form-input"
+            required
+          />
         </div>
 
         <!-- エラーメッセージ -->
@@ -162,12 +193,7 @@
           </div>
 
           <div class="confirm-item">
-            <span class="confirm-label">店舗ID:</span>
-            <span class="confirm-value">{{ form.storeId || '（自動生成）' }}</span>
-          </div>
-
-          <div class="confirm-item">
-            <span class="confirm-label">店舗名:</span>
+            <span class="confirm-label">企業名:</span>
             <span class="confirm-value">{{ form.name }}</span>
           </div>
 
@@ -177,18 +203,38 @@
           </div>
 
           <div class="confirm-item">
+            <span class="confirm-label">担当者氏名:</span>
+            <span class="confirm-value">{{ form.contactName }}</span>
+          </div>
+
+          <div class="confirm-item">
             <span class="confirm-label">電話番号:</span>
             <span class="confirm-value">{{ form.phone }}</span>
           </div>
 
           <div class="confirm-item">
-            <span class="confirm-label">営業時間:</span>
-            <span class="confirm-value">{{ form.businessHours || '未設定' }}</span>
+            <span class="confirm-label">メールアドレス:</span>
+            <span class="confirm-value">{{ form.email }}</span>
           </div>
 
           <div class="confirm-item">
-            <span class="confirm-label">ステータス:</span>
-            <span class="confirm-value">{{ form.status === 'active' ? '有効' : '無効' }}</span>
+            <span class="confirm-label">契約状態:</span>
+            <span class="confirm-value">{{ getStatusLabel(form.contractStatus) }}</span>
+          </div>
+
+          <div class="confirm-item">
+            <span class="confirm-label">契約プラン:</span>
+            <span class="confirm-value">{{ getPlanLabel(form.contractPlan) }}</span>
+          </div>
+
+          <div class="confirm-item">
+            <span class="confirm-label">契約開始日:</span>
+            <span class="confirm-value">{{ formatDate(form.contractStartDate) }}</span>
+          </div>
+
+          <div class="confirm-item">
+            <span class="confirm-label">契約終了日:</span>
+            <span class="confirm-value">{{ formatDate(form.contractEndDate) }}</span>
           </div>
         </div>
 
@@ -209,17 +255,20 @@
 import { useAdminStore } from '@/store/admin'
 
 export default {
-  name: 'StoreForm',
+  name: 'CompanyForm',
   data() {
     return {
       form: {
         companyId: '',
-        storeId: '',
         name: '',
         address: '',
+        contactName: '',
         phone: '',
-        businessHours: '',
-        status: 'active'
+        email: '',
+        contractStatus: '',
+        contractPlan: '',
+        contractStartDate: '',
+        contractEndDate: ''
       },
       showConfirmModal: false,
       errorMessage: '',
@@ -238,6 +287,18 @@ export default {
   methods: {
     handleSubmit() {
       this.errorMessage = ''
+
+      // 契約期間のバリデーション
+      if (this.form.contractStartDate && this.form.contractEndDate) {
+        const startDate = new Date(this.form.contractStartDate)
+        const endDate = new Date(this.form.contractEndDate)
+
+        if (startDate > endDate) {
+          this.errorMessage = '契約終了日は契約開始日より後の日付を設定してください'
+          return
+        }
+      }
+
       this.showConfirmModal = true
     },
     closeModal() {
@@ -252,11 +313,11 @@ export default {
         await new Promise(resolve => setTimeout(resolve, 500))
 
         if (this.isEditMode) {
-          alert('店舗情報を更新しました')
+          alert('企業情報を更新しました')
         } else {
-          alert('店舗を登録しました')
+          alert('企業を登録しました')
         }
-        this.$router.push('/admin/stores')
+        this.$router.push('/admin/companies')
       } catch (error) {
         this.errorMessage = '処理中にエラーが発生しました'
         console.error('Save error:', error)
@@ -265,37 +326,67 @@ export default {
         this.showConfirmModal = false
       }
     },
-    loadStore() {
+    getStatusLabel(status) {
+      const labels = {
+        active: '有効',
+        expired: '期限切れ',
+        suspended: '停止中'
+      }
+      return labels[status] || status
+    },
+    getPlanLabel(plan) {
+      const labels = {
+        basic: 'ベーシック',
+        standard: 'スタンダード',
+        premium: 'プレミアム'
+      }
+      return labels[plan] || plan
+    },
+    formatDate(dateString) {
+      if (!dateString) return '-'
+      const date = new Date(dateString)
+      return date.toLocaleDateString('ja-JP', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+    },
+    loadCompany() {
       if (this.isEditMode) {
-        // 実際はAPIから店舗データを取得
+        // 実際はAPIから企業データを取得
         // ダミーデータ
-        const dummyStore = {
+        const dummyCompany = {
           id: this.$route.params.id,
           companyId: 'COMP001',
-          storeId: 'STORE001',
-          name: 'イオン大宮店',
-          address: '埼玉県さいたま市大宮区桜木町2-3',
-          phone: '048-123-4567',
-          businessHours: '9:00-21:00',
-          status: 'active'
+          name: '株式会社サンプル商事',
+          address: '東京都千代田区丸の内1-1-1',
+          contactName: '山田太郎',
+          phone: '03-1234-5678',
+          email: 'yamada@sample.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'premium',
+          contractStartDate: '2024-01-01',
+          contractEndDate: '2025-12-31'
         }
 
-        this.form.companyId = dummyStore.companyId
-        this.form.storeId = dummyStore.storeId
-        this.form.name = dummyStore.name
-        this.form.address = dummyStore.address
-        this.form.phone = dummyStore.phone
-        this.form.businessHours = dummyStore.businessHours
-        this.form.status = dummyStore.status
+        this.form.companyId = dummyCompany.companyId
+        this.form.name = dummyCompany.name
+        this.form.address = dummyCompany.address
+        this.form.contactName = dummyCompany.contactName
+        this.form.phone = dummyCompany.phone
+        this.form.email = dummyCompany.email
+        this.form.contractStatus = dummyCompany.contractStatus
+        this.form.contractPlan = dummyCompany.contractPlan
+        this.form.contractStartDate = dummyCompany.contractStartDate
+        this.form.contractEndDate = dummyCompany.contractEndDate
       } else {
-        // 新規作成時は企業IDと店舗IDを空にする
+        // 新規作成時は企業IDを空にする
         this.form.companyId = ''
-        this.form.storeId = ''
       }
     },
     goBack() {
       if (confirm('入力内容は破棄されます。よろしいですか？')) {
-        this.$router.push('/admin/stores')
+        this.$router.push('/admin/companies')
       }
     },
     handleLogout() {
@@ -312,15 +403,21 @@ export default {
       this.$router.push('/admin/login')
       return
     }
+    // システム管理者のみアクセス可能
+    if (!this.adminStore.isSystemAdmin) {
+      alert('この機能はシステム管理者のみ利用できます')
+      this.$router.push('/admin')
+      return
+    }
 
-    // 編集モードの場合、店舗データをロード
-    this.loadStore()
+    // 編集モードの場合、企業データをロード
+    this.loadCompany()
   }
 }
 </script>
 
 <style scoped>
-.admin-store-form {
+.admin-company-form {
   min-height: 100vh;
   background-color: var(--bg-light);
 }
@@ -402,7 +499,7 @@ export default {
   padding: 40px 32px;
 }
 
-.store-form {
+.company-form {
   background-color: white;
   padding: 32px;
   border-radius: 12px;
@@ -453,49 +550,6 @@ export default {
   margin-top: 6px;
   font-size: 12px;
   color: var(--text-secondary);
-}
-
-.radio-group {
-  display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.radio-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 12px 16px;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.radio-label:hover {
-  border-color: var(--primary-color);
-  background-color: var(--bg-light);
-}
-
-.radio-input {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-}
-
-.radio-input:checked + .radio-text {
-  font-weight: 600;
-  color: var(--primary-color);
-}
-
-.radio-label:has(.radio-input:checked) {
-  border-color: var(--primary-color);
-  background-color: #eff6ff;
-}
-
-.radio-text {
-  font-size: 16px;
-  color: var(--text-primary);
 }
 
 .error-message {
@@ -640,12 +694,8 @@ export default {
     padding: 24px 20px;
   }
 
-  .store-form {
+  .company-form {
     padding: 20px;
-  }
-
-  .radio-group {
-    flex-direction: column;
   }
 
   .form-actions {

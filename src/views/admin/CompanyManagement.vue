@@ -1,13 +1,13 @@
 <template>
-  <div class="admin-store-list">
+  <div class="admin-company-list">
     <div class="admin-header">
       <div class="header-left">
-        <h1 class="page-title">店舗管理</h1>
+        <h1 class="page-title">企業管理</h1>
         <!-- パンくずリスト -->
         <nav class="breadcrumb">
           <router-link to="/admin">管理画面</router-link>
           <span class="separator">›</span>
-          <span class="current">店舗管理</span>
+          <span class="current">企業管理</span>
         </nav>
       </div>
       <button @click="handleLogout" class="logout-button">
@@ -22,7 +22,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="店舗名、住所、電話番号で検索"
+            placeholder="企業名または担当者氏名で検索"
             class="search-input"
             @input="performSearch"
           />
@@ -33,37 +33,30 @@
 
         <div class="filter-row">
           <div class="filter-group">
-            <label class="filter-label">企業ID:</label>
-            <input
-              v-model="filterCompanyId"
-              type="text"
-              placeholder="企業IDで検索"
-              class="filter-input"
-              @input="performSearch"
-            />
-          </div>
-
-          <div class="filter-group">
-            <label class="filter-label">店舗ID:</label>
-            <input
-              v-model="filterStoreId"
-              type="text"
-              placeholder="店舗IDで検索"
-              class="filter-input"
-              @input="performSearch"
-            />
-          </div>
-
-          <div class="filter-group">
-            <label class="filter-label">ステータス:</label>
+            <label class="filter-label">契約状態:</label>
             <select
-              v-model="filterStatus"
+              v-model="filterContractStatus"
               class="filter-select"
               @change="performSearch"
             >
               <option value="">すべて</option>
               <option value="active">有効</option>
-              <option value="inactive">無効</option>
+              <option value="expired">期限切れ</option>
+              <option value="suspended">停止中</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">契約プラン:</label>
+            <select
+              v-model="filterContractPlan"
+              class="filter-select"
+              @change="performSearch"
+            >
+              <option value="">すべて</option>
+              <option value="basic">ベーシック</option>
+              <option value="standard">スタンダード</option>
+              <option value="premium">プレミアム</option>
             </select>
           </div>
         </div>
@@ -74,21 +67,18 @@
           <button @click="bulkActivate" class="btn-bulk btn-publish">
             一括有効化
           </button>
-          <button @click="bulkDeactivate" class="btn-bulk btn-unpublish">
-            一括無効化
-          </button>
-          <button @click="confirmBulkDelete" class="btn-bulk btn-delete">
-            一括削除
+          <button @click="bulkSuspend" class="btn-bulk btn-unpublish">
+            一括停止
           </button>
         </div>
       </div>
 
-      <!-- 店舗一覧 -->
-      <div class="stores-section">
+      <!-- 企業一覧 -->
+      <div class="companies-section">
         <div class="section-header">
           <h2 class="section-title">
-            店舗一覧
-            <span class="result-count">（{{ filteredStores.length }}件）</span>
+            企業一覧
+            <span class="result-count">（{{ filteredCompanies.length }}件）</span>
           </h2>
         </div>
 
@@ -96,12 +86,12 @@
           <p>読み込み中...</p>
         </div>
 
-        <div v-else-if="filteredStores.length === 0" class="no-results">
-          <p>店舗が見つかりませんでした</p>
+        <div v-else-if="filteredCompanies.length === 0" class="no-results">
+          <p>企業が見つかりませんでした</p>
         </div>
 
         <div v-else class="table-container">
-          <table class="stores-table">
+          <table class="companies-table">
             <thead>
               <tr>
                 <th class="col-checkbox">
@@ -111,62 +101,73 @@
                     @change="toggleSelectAll"
                   />
                 </th>
-                <th class="col-company-id">企業ID</th>
-                <th class="col-store-id">店舗ID</th>
-                <th class="col-name">店舗名</th>
+                <th class="col-id">企業ID</th>
+                <th class="col-name">企業名</th>
                 <th class="col-address">住所</th>
+                <th class="col-contact">担当者氏名</th>
                 <th class="col-phone">電話番号</th>
-                <th class="col-status">ステータス</th>
+                <th class="col-email">メールアドレス</th>
+                <th class="col-status">契約状態</th>
+                <th class="col-plan">契約プラン</th>
+                <th class="col-date">契約開始日</th>
+                <th class="col-date">契約終了日</th>
                 <th class="col-actions">操作</th>
               </tr>
             </thead>
             <tbody>
               <tr
-                v-for="store in filteredStores"
-                :key="store.id"
-                :class="{ selected: selectedIds.includes(store.id) }"
+                v-for="company in filteredCompanies"
+                :key="company.id"
+                :class="{ selected: selectedIds.includes(company.id) }"
               >
                 <td class="col-checkbox">
                   <input
                     type="checkbox"
-                    :checked="selectedIds.includes(store.id)"
-                    @change="toggleSelect(store.id)"
+                    :checked="selectedIds.includes(company.id)"
+                    @change="toggleSelect(company.id)"
                   />
                 </td>
-                <td class="col-company-id">
-                  {{ store.companyId }}
-                </td>
-                <td class="col-store-id">
-                  {{ store.storeId }}
+                <td class="col-id">
+                  {{ company.companyId }}
                 </td>
                 <td class="col-name">
-                  {{ store.name }}
+                  {{ company.name }}
                 </td>
                 <td class="col-address">
-                  {{ store.address }}
+                  {{ company.address }}
+                </td>
+                <td class="col-contact">
+                  {{ company.contactName }}
                 </td>
                 <td class="col-phone">
-                  {{ store.phone }}
+                  {{ company.phone }}
+                </td>
+                <td class="col-email">
+                  {{ company.email }}
                 </td>
                 <td class="col-status">
-                  <span :class="['status-badge', store.status]">
-                    {{ store.status === 'active' ? '有効' : '無効' }}
+                  <span :class="['status-badge', company.contractStatus]">
+                    {{ getStatusLabel(company.contractStatus) }}
                   </span>
+                </td>
+                <td class="col-plan">
+                  <span :class="['plan-badge', company.contractPlan]">
+                    {{ getPlanLabel(company.contractPlan) }}
+                  </span>
+                </td>
+                <td class="col-date">
+                  {{ formatDate(company.contractStartDate) }}
+                </td>
+                <td class="col-date">
+                  {{ formatDate(company.contractEndDate) }}
                 </td>
                 <td class="col-actions">
                   <button
-                    @click="goToEditPage(store.id)"
+                    @click="goToEditPage(company.id)"
                     class="btn-icon btn-edit"
                     title="編集"
                   >
                     ✏️
-                  </button>
-                  <button
-                    @click="confirmDelete(store)"
-                    class="btn-icon btn-delete"
-                    title="削除"
-                  >
-                    🗑️
                   </button>
                 </td>
               </tr>
@@ -182,16 +183,15 @@
 import { useAdminStore } from '@/store/admin'
 
 export default {
-  name: 'StoreManagement',
+  name: 'CompanyManagement',
   data() {
     return {
       searchQuery: '',
-      filterCompanyId: '',
-      filterStoreId: '',
-      filterStatus: '',
+      filterContractStatus: '',
+      filterContractPlan: '',
       loading: false,
       selectedIds: [],
-      stores: []
+      companies: []
     }
   },
   setup() {
@@ -199,65 +199,69 @@ export default {
     return { adminStore }
   },
   computed: {
-    filteredStores() {
-      let stores = [...this.stores]
+    filteredCompanies() {
+      let companies = [...this.companies]
 
-      // 店舗名、住所、電話番号で検索
+      // 企業名または担当者氏名で検索
       if (this.searchQuery.trim()) {
         const query = this.searchQuery.toLowerCase()
-        stores = stores.filter(s =>
-          s.name.toLowerCase().includes(query) ||
-          s.address.toLowerCase().includes(query) ||
-          s.phone.toLowerCase().includes(query)
+        companies = companies.filter(c =>
+          c.name.toLowerCase().includes(query) ||
+          c.contactName.toLowerCase().includes(query)
         )
       }
 
-      // 企業IDフィルター
-      if (this.filterCompanyId.trim()) {
-        const query = this.filterCompanyId.toLowerCase()
-        stores = stores.filter(s => s.companyId.toLowerCase().includes(query))
+      // 契約状態フィルター
+      if (this.filterContractStatus) {
+        companies = companies.filter(c => c.contractStatus === this.filterContractStatus)
       }
 
-      // 店舗IDフィルター
-      if (this.filterStoreId.trim()) {
-        const query = this.filterStoreId.toLowerCase()
-        stores = stores.filter(s => s.storeId.toLowerCase().includes(query))
+      // 契約プランフィルター
+      if (this.filterContractPlan) {
+        companies = companies.filter(c => c.contractPlan === this.filterContractPlan)
       }
 
-      // ステータスフィルター
-      if (this.filterStatus) {
-        stores = stores.filter(s => s.status === this.filterStatus)
-      }
-
-      return stores
+      return companies
     },
     isAllSelected() {
-      return this.filteredStores.length > 0 &&
-        this.selectedIds.length === this.filteredStores.length
+      return this.filteredCompanies.length > 0 &&
+        this.selectedIds.length === this.filteredCompanies.length
     }
   },
   methods: {
     performSearch() {
       // リアルタイム検索のためのメソッド（computedで処理）
     },
+    getStatusLabel(status) {
+      const labels = {
+        active: '有効',
+        expired: '期限切れ',
+        suspended: '停止中'
+      }
+      return labels[status] || status
+    },
+    getPlanLabel(plan) {
+      const labels = {
+        basic: 'ベーシック',
+        standard: 'スタンダード',
+        premium: 'プレミアム'
+      }
+      return labels[plan] || plan
+    },
+    formatDate(dateString) {
+      if (!dateString) return '-'
+      const date = new Date(dateString)
+      return date.toLocaleDateString('ja-JP', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+    },
     goToCreatePage() {
-      this.$router.push('/admin/stores/new')
+      this.$router.push('/admin/companies/new')
     },
     goToEditPage(id) {
-      this.$router.push(`/admin/stores/edit/${id}`)
-    },
-    confirmDelete(store) {
-      if (confirm(`「${store.name}」を削除しますか？\nこの操作は取り消せません。`)) {
-        this.deleteStore(store.id)
-      }
-    },
-    deleteStore(id) {
-      const index = this.stores.findIndex(s => s.id === id)
-      if (index > -1) {
-        this.stores.splice(index, 1)
-        this.selectedIds = this.selectedIds.filter(selectedId => selectedId !== id)
-        alert('店舗を削除しました')
-      }
+      this.$router.push(`/admin/companies/edit/${id}`)
     },
     toggleSelect(id) {
       const index = this.selectedIds.indexOf(id)
@@ -271,33 +275,26 @@ export default {
       if (this.isAllSelected) {
         this.selectedIds = []
       } else {
-        this.selectedIds = this.filteredStores.map(store => store.id)
+        this.selectedIds = this.filteredCompanies.map(company => company.id)
       }
     },
     bulkActivate() {
-      if (confirm(`選択した${this.selectedIds.length}件の店舗を有効化しますか？`)) {
+      if (confirm(`選択した${this.selectedIds.length}件の企業を有効化しますか？`)) {
         this.selectedIds.forEach(id => {
-          const store = this.stores.find(s => s.id === id)
-          if (store) store.status = 'active'
+          const company = this.companies.find(c => c.id === id)
+          if (company) company.contractStatus = 'active'
         })
-        alert('店舗を有効化しました')
+        alert('企業を有効化しました')
         this.selectedIds = []
       }
     },
-    bulkDeactivate() {
-      if (confirm(`選択した${this.selectedIds.length}件の店舗を無効化しますか？`)) {
+    bulkSuspend() {
+      if (confirm(`選択した${this.selectedIds.length}件の企業を停止しますか？`)) {
         this.selectedIds.forEach(id => {
-          const store = this.stores.find(s => s.id === id)
-          if (store) store.status = 'inactive'
+          const company = this.companies.find(c => c.id === id)
+          if (company) company.contractStatus = 'suspended'
         })
-        alert('店舗を無効化しました')
-        this.selectedIds = []
-      }
-    },
-    confirmBulkDelete() {
-      if (confirm(`選択した${this.selectedIds.length}件の店舗を削除しますか？\nこの操作は取り消せません。`)) {
-        this.stores = this.stores.filter(s => !this.selectedIds.includes(s.id))
-        alert('店舗を削除しました')
+        alert('企業を停止しました')
         this.selectedIds = []
       }
     },
@@ -307,53 +304,60 @@ export default {
         this.$router.push('/admin/login')
       }
     },
-    loadStores() {
+    loadCompanies() {
       // ダミーデータ（実際はAPIから取得）
-      this.stores = [
+      this.companies = [
         {
           id: 1,
           companyId: 'COMP001',
-          storeId: 'STORE001',
-          name: 'イオン大宮店',
-          address: '埼玉県さいたま市大宮区桜木町2-3',
-          phone: '048-123-4567',
-          status: 'active'
+          name: '株式会社サンプル商事',
+          address: '東京都千代田区丸の内1-1-1',
+          contactName: '山田太郎',
+          phone: '03-1234-5678',
+          email: 'yamada@sample.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'premium',
+          contractStartDate: '2024-01-01',
+          contractEndDate: '2025-12-31'
         },
         {
           id: 2,
-          companyId: 'COMP001',
-          storeId: 'STORE002',
-          name: 'マルエツ浦和店',
-          address: '埼玉県さいたま市浦和区高砂1-2-1',
-          phone: '048-234-5678',
-          status: 'active'
+          companyId: 'COMP002',
+          name: 'テスト株式会社',
+          address: '大阪府大阪市北区梅田2-2-2',
+          contactName: '佐藤花子',
+          phone: '06-9876-5432',
+          email: 'sato@test.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'standard',
+          contractStartDate: '2024-03-01',
+          contractEndDate: '2025-02-28'
         },
         {
           id: 3,
-          companyId: 'COMP002',
-          storeId: 'STORE003',
-          name: 'ライフ品川店',
-          address: '東京都品川区北品川1-1-1',
-          phone: '03-1111-2222',
-          status: 'active'
+          companyId: 'COMP003',
+          name: '有限会社サンプル',
+          address: '愛知県名古屋市中区栄3-3-3',
+          contactName: '鈴木一郎',
+          phone: '052-1111-2222',
+          email: 'suzuki@sample-ltd.co.jp',
+          contractStatus: 'expired',
+          contractPlan: 'basic',
+          contractStartDate: '2023-01-01',
+          contractEndDate: '2023-12-31'
         },
         {
           id: 4,
-          companyId: 'COMP002',
-          storeId: 'STORE004',
-          name: 'サミット渋谷店',
-          address: '東京都渋谷区道玄坂2-3-1',
-          phone: '03-3333-4444',
-          status: 'inactive'
-        },
-        {
-          id: 5,
-          companyId: 'COMP003',
-          storeId: 'STORE005',
-          name: 'オーケー川崎店',
-          address: '神奈川県川崎市川崎区駅前本町1-1',
-          phone: '044-555-6666',
-          status: 'active'
+          companyId: 'COMP004',
+          name: 'サンプルコーポレーション',
+          address: '福岡県福岡市博多区博多駅前4-4-4',
+          contactName: '田中次郎',
+          phone: '092-3333-4444',
+          email: 'tanaka@samplecorp.co.jp',
+          contractStatus: 'suspended',
+          contractPlan: 'standard',
+          contractStartDate: '2024-02-01',
+          contractEndDate: '2025-01-31'
         }
       ]
     }
@@ -365,14 +369,20 @@ export default {
       this.$router.push('/admin/login')
       return
     }
+    // システム管理者のみアクセス可能
+    if (!this.adminStore.isSystemAdmin) {
+      alert('この機能はシステム管理者のみ利用できます')
+      this.$router.push('/admin')
+      return
+    }
 
-    this.loadStores()
+    this.loadCompanies()
   }
 }
 </script>
 
 <style scoped>
-.admin-store-list {
+.admin-company-list {
   min-height: 100vh;
   background-color: var(--bg-light);
 }
@@ -521,7 +531,6 @@ export default {
   white-space: nowrap;
 }
 
-.filter-input,
 .filter-select {
   padding: 8px 12px;
   border: 2px solid var(--border-color);
@@ -529,17 +538,9 @@ export default {
   font-size: 14px;
   outline: none;
   transition: border-color 0.3s ease;
+  min-width: 140px;
 }
 
-.filter-input {
-  min-width: 150px;
-}
-
-.filter-select {
-  min-width: 120px;
-}
-
-.filter-input:focus,
 .filter-select:focus {
   border-color: var(--primary-color);
 }
@@ -591,18 +592,8 @@ export default {
   transform: translateY(-2px);
 }
 
-.btn-bulk.btn-delete {
-  background-color: var(--danger-color);
-  color: white;
-}
-
-.btn-bulk.btn-delete:hover {
-  background-color: #dc2626;
-  transform: translateY(-2px);
-}
-
-/* 店舗一覧セクション */
-.stores-section {
+/* 企業一覧セクション */
+.companies-section {
   background-color: white;
   padding: 24px;
   border-radius: 12px;
@@ -638,18 +629,18 @@ export default {
   overflow-x: auto;
 }
 
-.stores-table {
+.companies-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-  min-width: 1200px;
+  min-width: 1400px;
 }
 
-.stores-table thead {
+.companies-table thead {
   background-color: var(--bg-light);
 }
 
-.stores-table th {
+.companies-table th {
   padding: 12px 16px;
   text-align: left;
   font-weight: 600;
@@ -658,21 +649,21 @@ export default {
   white-space: nowrap;
 }
 
-.stores-table td {
+.companies-table td {
   padding: 16px;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
 }
 
-.stores-table tbody tr {
+.companies-table tbody tr {
   transition: background-color 0.2s ease;
 }
 
-.stores-table tbody tr:hover {
+.companies-table tbody tr:hover {
   background-color: var(--bg-light);
 }
 
-.stores-table tbody tr.selected {
+.companies-table tbody tr.selected {
   background-color: #dbeafe;
 }
 
@@ -687,12 +678,7 @@ export default {
   cursor: pointer;
 }
 
-.col-company-id {
-  width: 100px;
-  font-weight: 500;
-}
-
-.col-store-id {
+.col-id {
   width: 100px;
   font-weight: 500;
 }
@@ -703,12 +689,21 @@ export default {
 }
 
 .col-address {
-  min-width: 300px;
+  min-width: 250px;
   color: var(--text-secondary);
 }
 
+.col-contact {
+  min-width: 120px;
+}
+
 .col-phone {
-  min-width: 140px;
+  min-width: 130px;
+}
+
+.col-email {
+  min-width: 200px;
+  color: var(--text-secondary);
 }
 
 .col-status {
@@ -729,13 +724,52 @@ export default {
   color: #065f46;
 }
 
-.status-badge.inactive {
+.status-badge.expired {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.suspended {
   background-color: #f3f4f6;
   color: #374151;
 }
 
+.col-plan {
+  width: 120px;
+}
+
+.plan-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.plan-badge.basic {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.plan-badge.standard {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.plan-badge.premium {
+  background-color: #fce7f3;
+  color: #831843;
+}
+
+.col-date {
+  width: 110px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
 .col-actions {
-  width: 100px;
+  width: 80px;
   text-align: center;
 }
 
@@ -783,7 +817,6 @@ export default {
     width: 100%;
   }
 
-  .filter-input,
   .filter-select {
     flex: 1;
   }
