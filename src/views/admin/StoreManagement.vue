@@ -44,7 +44,7 @@
             />
           </div>
 
-          <div class="filter-group" v-if="adminStore.isSystemAdmin">
+          <div class="filter-group">
             <label class="filter-label">店舗ID:</label>
             <input
               v-model="filterStoreId"
@@ -54,7 +54,7 @@
             />
           </div>
 
-          <div class="filter-group" v-if="adminStore.isSystemAdmin">
+          <div class="filter-group">
             <label class="filter-label">ステータス:</label>
             <select
               v-model="filterStatus"
