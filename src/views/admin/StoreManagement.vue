@@ -338,6 +338,11 @@ export default {
     performSearch() {
       let stores = [...this.allStores]
 
+      // 企業管理者は自社の店舗のみ表示
+      if (this.adminStore.isCompanyAdmin) {
+        stores = stores.filter(s => s.companyId === this.adminStore.userCompanyId)
+      }
+
       // 店舗名、住所、電話番号で検索
       if (this.searchQuery.trim()) {
         const query = this.searchQuery.toLowerCase()
@@ -394,7 +399,14 @@ export default {
       this.currentPage = 1
     },
     loadAllStores() {
-      this.filteredStores = [...this.allStores]
+      let stores = [...this.allStores]
+
+      // 企業管理者は自社の店舗のみ表示
+      if (this.adminStore.isCompanyAdmin) {
+        stores = stores.filter(s => s.companyId === this.adminStore.userCompanyId)
+      }
+
+      this.filteredStores = stores
     },
     // ページネーション関連
     goToPage(page) {
