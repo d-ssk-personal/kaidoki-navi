@@ -19,6 +19,7 @@ import CompanyForm from '@/views/admin/CompanyForm.vue'
 import FlyerManagement from '@/views/admin/FlyerManagement.vue'
 import FlyerForm from '@/views/admin/FlyerForm.vue'
 import AccountManagement from '@/views/admin/AccountManagement.vue'
+import AccountForm from '@/views/admin/AccountForm.vue'
 
 const routes = [
   {
@@ -145,6 +146,16 @@ const routes = [
     path: '/admin/accounts',
     name: 'AdminAccountManagement',
     component: AccountManagement
+  },
+  {
+    path: '/admin/accounts/new',
+    name: 'AdminAccountNew',
+    component: AccountForm
+  },
+  {
+    path: '/admin/accounts/edit/:id',
+    name: 'AdminAccountEdit',
+    component: AccountForm
   }
 ]
 
