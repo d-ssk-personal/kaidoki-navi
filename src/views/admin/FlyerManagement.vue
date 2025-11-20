@@ -15,6 +15,36 @@
     <!-- 検索フィルター -->
     <div class="search-section">
       <div class="search-filters">
+        <div v-if="adminStore.isSystemAdmin" class="filter-group">
+          <label class="filter-label">企業ID</label>
+          <input
+            v-model="filters.companyId"
+            type="text"
+            class="filter-input"
+            placeholder="企業IDで検索"
+          />
+        </div>
+
+        <div v-if="adminStore.isSystemAdmin" class="filter-group">
+          <label class="filter-label">企業名</label>
+          <input
+            v-model="filters.companyName"
+            type="text"
+            class="filter-input"
+            placeholder="企業名で検索"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">店舗ID</label>
+          <input
+            v-model="filters.storeId"
+            type="text"
+            class="filter-input"
+            placeholder="店舗IDで検索"
+          />
+        </div>
+
         <div class="filter-group">
           <label class="filter-label">店舗名</label>
           <input
@@ -22,6 +52,26 @@
             type="text"
             class="filter-input"
             placeholder="店舗名で検索"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">チラシID</label>
+          <input
+            v-model="filters.flyerId"
+            type="text"
+            class="filter-input"
+            placeholder="チラシIDで検索"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">住所</label>
+          <input
+            v-model="filters.address"
+            type="text"
+            class="filter-input"
+            placeholder="住所で検索"
           />
         </div>
 
@@ -76,6 +126,15 @@
         <span class="bulk-count">{{ selectedIds.length }}件選択中</span>
       </div>
       <div class="bulk-buttons">
+        <select v-model="bulkStatusChange" class="bulk-status-select">
+          <option value="">ステータスを選択</option>
+          <option value="active">掲載中</option>
+          <option value="inactive">掲載終了</option>
+          <option value="scheduled">掲載予定</option>
+        </select>
+        <button class="btn-primary" @click="bulkChangeStatus" :disabled="!bulkStatusChange">
+          一括ステータス変更
+        </button>
         <button class="btn-danger" @click="bulkDelete">
           一括削除
         </button>
@@ -104,15 +163,21 @@
                 @change="toggleSelectAll"
               />
             </th>
-            <th class="col-store">店舗名</th>
-            <th class="col-period">掲載期間</th>
+            <th v-if="adminStore.isSystemAdmin" class="col-company-id">企業ID</th>
+            <th v-if="adminStore.isSystemAdmin" class="col-company-name">企業名</th>
+            <th class="col-store-id">店舗ID</th>
+            <th class="col-store-name">店舗名</th>
+            <th class="col-flyer-id">チラシID</th>
+            <th class="col-address">住所</th>
+            <th class="col-period-from">掲載期間From</th>
+            <th class="col-period-to">掲載期間To</th>
             <th class="col-status">掲載ステータス</th>
             <th class="col-actions">操作</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="filteredFlyers.length === 0">
-            <td colspan="5" class="empty-message">
+            <td :colspan="adminStore.isSystemAdmin ? 11 : 9" class="empty-message">
               チラシが見つかりませんでした
             </td>
           </tr>
@@ -128,10 +193,14 @@
                 @change="toggleSelect(flyer.id)"
               />
             </td>
-            <td class="col-store">{{ flyer.storeName }}</td>
-            <td class="col-period">
-              {{ formatDate(flyer.periodFrom) }} 〜 {{ formatDate(flyer.periodTo) }}
-            </td>
+            <td v-if="adminStore.isSystemAdmin" class="col-company-id">{{ flyer.companyId }}</td>
+            <td v-if="adminStore.isSystemAdmin" class="col-company-name">{{ flyer.companyName }}</td>
+            <td class="col-store-id">{{ flyer.storeId }}</td>
+            <td class="col-store-name">{{ flyer.storeName }}</td>
+            <td class="col-flyer-id">{{ flyer.flyerId }}</td>
+            <td class="col-address">{{ flyer.address }}</td>
+            <td class="col-period-from">{{ formatDate(flyer.periodFrom) }}</td>
+            <td class="col-period-to">{{ formatDate(flyer.periodTo) }}</td>
             <td class="col-status">
               <span :class="['status-badge', `status-${flyer.status}`]">
                 {{ getStatusLabel(flyer.status) }}
@@ -169,16 +238,27 @@ export default {
   data() {
     return {
       filters: {
+        companyId: '',
+        companyName: '',
+        storeId: '',
         storeName: '',
+        flyerId: '',
+        address: '',
         periodFrom: '',
         periodTo: '',
         status: ''
       },
       selectedIds: [],
+      bulkStatusChange: '',
       flyers: [
         {
           id: 1,
+          companyId: 'COMP001',
+          companyName: '株式会社ABC商事',
+          storeId: 'STORE001',
           storeName: 'スーパーマーケット ABC',
+          flyerId: 'FLYER001',
+          address: '東京都渋谷区渋谷1-1-1',
           periodFrom: '2024-01-15',
           periodTo: '2024-01-21',
           status: 'active',
@@ -186,7 +266,12 @@ export default {
         },
         {
           id: 2,
+          companyId: 'COMP002',
+          companyName: '株式会社DEFホールディングス',
+          storeId: 'STORE002',
           storeName: 'ドラッグストア DEF',
+          flyerId: 'FLYER002',
+          address: '東京都新宿区新宿2-2-2',
           periodFrom: '2024-01-10',
           periodTo: '2024-01-16',
           status: 'active',
@@ -194,7 +279,12 @@ export default {
         },
         {
           id: 3,
+          companyId: 'COMP003',
+          companyName: '株式会社GHIチェーン',
+          storeId: 'STORE003',
           storeName: 'ホームセンター GHI',
+          flyerId: 'FLYER003',
+          address: '神奈川県横浜市中区山下町3-3-3',
           periodFrom: '2024-01-01',
           periodTo: '2024-01-07',
           status: 'inactive',
@@ -202,7 +292,12 @@ export default {
         },
         {
           id: 4,
+          companyId: 'COMP004',
+          companyName: '株式会社JKL電機',
+          storeId: 'STORE004',
           storeName: '家電量販店 JKL',
+          flyerId: 'FLYER004',
+          address: '埼玉県さいたま市大宮区4-4-4',
           periodFrom: '2024-01-20',
           periodTo: '2024-01-26',
           status: 'scheduled',
@@ -210,7 +305,12 @@ export default {
         },
         {
           id: 5,
+          companyId: 'COMP001',
+          companyName: '株式会社ABC商事',
+          storeId: 'STORE005',
           storeName: 'スーパーマーケット MNO',
+          flyerId: 'FLYER005',
+          address: '千葉県千葉市中央区5-5-5',
           periodFrom: '2024-01-12',
           periodTo: '2024-01-18',
           status: 'active',
@@ -223,11 +323,51 @@ export default {
     filteredFlyers() {
       let results = [...this.flyers]
 
+      // 企業IDフィルター
+      if (this.filters.companyId.trim()) {
+        const query = this.filters.companyId.toLowerCase()
+        results = results.filter(f =>
+          f.companyId.toLowerCase().includes(query)
+        )
+      }
+
+      // 企業名フィルター
+      if (this.filters.companyName.trim()) {
+        const query = this.filters.companyName.toLowerCase()
+        results = results.filter(f =>
+          f.companyName.toLowerCase().includes(query)
+        )
+      }
+
+      // 店舗IDフィルター
+      if (this.filters.storeId.trim()) {
+        const query = this.filters.storeId.toLowerCase()
+        results = results.filter(f =>
+          f.storeId.toLowerCase().includes(query)
+        )
+      }
+
       // 店舗名フィルター
       if (this.filters.storeName.trim()) {
         const query = this.filters.storeName.toLowerCase()
         results = results.filter(f =>
           f.storeName.toLowerCase().includes(query)
+        )
+      }
+
+      // チラシIDフィルター
+      if (this.filters.flyerId.trim()) {
+        const query = this.filters.flyerId.toLowerCase()
+        results = results.filter(f =>
+          f.flyerId.toLowerCase().includes(query)
+        )
+      }
+
+      // 住所フィルター
+      if (this.filters.address.trim()) {
+        const query = this.filters.address.toLowerCase()
+        results = results.filter(f =>
+          f.address.toLowerCase().includes(query)
         )
       }
 
@@ -271,7 +411,12 @@ export default {
     },
     resetFilters() {
       this.filters = {
+        companyId: '',
+        companyName: '',
+        storeId: '',
         storeName: '',
+        flyerId: '',
+        address: '',
         periodFrom: '',
         periodTo: '',
         status: ''
@@ -291,6 +436,21 @@ export default {
         this.selectedIds = []
       } else {
         this.selectedIds = this.filteredFlyers.map(f => f.id)
+      }
+    },
+    bulkChangeStatus() {
+      if (!this.bulkStatusChange) {
+        alert('ステータスを選択してください')
+        return
+      }
+      if (confirm(`選択した${this.selectedIds.length}件のチラシのステータスを「${this.getStatusLabel(this.bulkStatusChange)}」に変更しますか？`)) {
+        this.selectedIds.forEach(id => {
+          const flyer = this.flyers.find(f => f.id === id)
+          if (flyer) flyer.status = this.bulkStatusChange
+        })
+        alert('ステータスを変更しました')
+        this.selectedIds = []
+        this.bulkStatusChange = ''
       }
     },
     bulkDelete() {
@@ -471,6 +631,22 @@ export default {
 .bulk-buttons {
   display: flex;
   gap: 12px;
+  align-items: center;
+}
+
+.bulk-status-select {
+  padding: 8px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.bulk-status-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
 }
 
 /* アクションバー */
@@ -541,13 +717,14 @@ export default {
 .table-container {
   background-color: white;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .flyer-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 1600px;
 }
 
 .flyer-table thead {
@@ -589,13 +766,42 @@ export default {
   cursor: pointer;
 }
 
-.col-store {
-  min-width: 200px;
+.col-company-id {
+  min-width: 100px;
   font-weight: 500;
 }
 
-.col-period {
-  min-width: 220px;
+.col-company-name {
+  min-width: 180px;
+  font-weight: 500;
+}
+
+.col-store-id {
+  min-width: 100px;
+  font-weight: 500;
+}
+
+.col-store-name {
+  min-width: 180px;
+  font-weight: 500;
+}
+
+.col-flyer-id {
+  min-width: 100px;
+  font-weight: 500;
+}
+
+.col-address {
+  min-width: 250px;
+  color: var(--text-secondary);
+}
+
+.col-period-from {
+  min-width: 120px;
+}
+
+.col-period-to {
+  min-width: 120px;
 }
 
 .col-status {

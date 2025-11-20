@@ -16,23 +16,71 @@
 
     <div class="form-container">
       <form @submit.prevent="showConfirmModal" class="flyer-form-content">
+        <!-- 企業ID -->
+        <div class="form-group">
+          <label class="form-label">企業ID</label>
+          <input
+            v-model="form.companyId"
+            type="text"
+            class="form-input"
+            disabled
+          />
+        </div>
+
+        <!-- 店舗ID -->
+        <div class="form-group">
+          <label class="form-label">店舗ID</label>
+          <input
+            v-model="form.storeId"
+            type="text"
+            class="form-input"
+            disabled
+          />
+        </div>
+
+        <!-- 企業名 -->
+        <div class="form-group">
+          <label class="form-label">企業名</label>
+          <input
+            v-model="form.companyName"
+            type="text"
+            class="form-input"
+            disabled
+          />
+        </div>
+
         <!-- 店舗名 -->
         <div class="form-group">
-          <label class="form-label required">店舗名</label>
-          <select
-            v-model="form.storeId"
+          <label class="form-label">店舗名</label>
+          <input
+            v-model="form.storeName"
+            type="text"
             class="form-input"
+            disabled
+          />
+        </div>
+
+        <!-- 住所 -->
+        <div class="form-group">
+          <label class="form-label">住所</label>
+          <input
+            v-model="form.address"
+            type="text"
+            class="form-input"
+            disabled
+          />
+        </div>
+
+        <!-- チラシタイトル -->
+        <div class="form-group">
+          <label class="form-label required">チラシタイトル</label>
+          <input
+            v-model="form.title"
+            type="text"
+            class="form-input"
+            placeholder="チラシタイトルを入力してください"
             required
-          >
-            <option value="">店舗を選択してください</option>
-            <option
-              v-for="store in stores"
-              :key="store.id"
-              :value="store.id"
-            >
-              {{ store.name }}
-            </option>
-          </select>
+          />
         </div>
 
         <!-- チラシ画像 -->
@@ -79,29 +127,44 @@
           </div>
         </div>
 
-        <!-- 掲載期間From -->
+        <!-- 掲載期間 -->
         <div class="form-group">
-          <label class="form-label required">掲載期間From</label>
-          <input
-            v-model="form.periodFrom"
-            type="date"
-            class="form-input"
-            required
-          />
-        </div>
-
-        <!-- 掲載期間To -->
-        <div class="form-group">
-          <label class="form-label required">掲載期間To</label>
-          <input
-            v-model="form.periodTo"
-            type="date"
-            class="form-input"
-            required
-          />
+          <label class="form-label required">掲載期間</label>
+          <div class="period-row">
+            <input
+              v-model="form.periodFrom"
+              type="date"
+              class="form-input period-input"
+              required
+            />
+            <span class="period-separator">〜</span>
+            <input
+              v-model="form.periodTo"
+              type="date"
+              class="form-input period-input"
+              required
+            />
+          </div>
           <p v-if="periodToError" class="error-message">
             {{ periodToError }}
           </p>
+        </div>
+
+        <!-- チラシカテゴリ -->
+        <div class="form-group">
+          <label class="form-label required">チラシカテゴリ</label>
+          <select
+            v-model="form.category"
+            class="form-input"
+            required
+          >
+            <option value="">カテゴリを選択してください</option>
+            <option value="food">食品</option>
+            <option value="daily">日用品</option>
+            <option value="electronics">家電</option>
+            <option value="fashion">ファッション</option>
+            <option value="other">その他</option>
+          </select>
         </div>
 
         <!-- 掲載ステータス -->
@@ -139,8 +202,28 @@
         </p>
         <div class="modal-details">
           <div class="detail-row">
+            <span class="detail-label">企業ID:</span>
+            <span class="detail-value">{{ form.companyId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">企業名:</span>
+            <span class="detail-value">{{ form.companyName }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">店舗ID:</span>
+            <span class="detail-value">{{ form.storeId }}</span>
+          </div>
+          <div class="detail-row">
             <span class="detail-label">店舗名:</span>
-            <span class="detail-value">{{ getStoreName(form.storeId) }}</span>
+            <span class="detail-value">{{ form.storeName }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">住所:</span>
+            <span class="detail-value">{{ form.address }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">チラシタイトル:</span>
+            <span class="detail-value">{{ form.title }}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">チラシ画像:</span>
@@ -151,6 +234,10 @@
             <span class="detail-value">
               {{ formatDate(form.periodFrom) }} 〜 {{ formatDate(form.periodTo) }}
             </span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">チラシカテゴリ:</span>
+            <span class="detail-value">{{ getCategoryLabel(form.category) }}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">掲載ステータス:</span>
@@ -184,19 +271,18 @@ export default {
       isEditMode: false,
       showModal: false,
       form: {
+        companyId: '',
         storeId: '',
+        companyName: '',
+        storeName: '',
+        address: '',
+        title: '',
         images: [],
         periodFrom: '',
         periodTo: '',
+        category: '',
         status: 'active'
-      },
-      stores: [
-        { id: 1, name: 'スーパーマーケット ABC' },
-        { id: 2, name: 'ドラッグストア DEF' },
-        { id: 3, name: 'ホームセンター GHI' },
-        { id: 4, name: '家電量販店 JKL' },
-        { id: 5, name: 'スーパーマーケット MNO' }
-      ]
+      }
     }
   },
   computed: {
@@ -230,21 +316,33 @@ export default {
       // ダミーデータで初期化
       const dummyFlyer = {
         id: id,
-        storeId: 1,
+        companyId: 'COMP001',
+        storeId: 'STORE001',
+        companyName: '株式会社ABC商事',
+        storeName: 'スーパーマーケット ABC',
+        address: '東京都渋谷区渋谷1-1-1',
+        title: '週末限定セール',
         images: [
           { preview: 'https://via.placeholder.com/300x200?text=Flyer+1' },
           { preview: 'https://via.placeholder.com/300x200?text=Flyer+2' }
         ],
         periodFrom: '2024-01-15',
         periodTo: '2024-01-21',
+        category: 'food',
         status: 'active'
       }
 
       this.form = {
+        companyId: dummyFlyer.companyId,
         storeId: dummyFlyer.storeId,
+        companyName: dummyFlyer.companyName,
+        storeName: dummyFlyer.storeName,
+        address: dummyFlyer.address,
+        title: dummyFlyer.title,
         images: dummyFlyer.images,
         periodFrom: dummyFlyer.periodFrom,
         periodTo: dummyFlyer.periodTo,
+        category: dummyFlyer.category,
         status: dummyFlyer.status
       }
     },
@@ -285,8 +383,8 @@ export default {
     },
     showConfirmModal() {
       // バリデーション
-      if (!this.form.storeId) {
-        alert('店舗名を選択してください')
+      if (!this.form.title) {
+        alert('チラシタイトルを入力してください')
         return
       }
 
@@ -297,6 +395,11 @@ export default {
 
       if (this.periodToError) {
         alert(this.periodToError)
+        return
+      }
+
+      if (!this.form.category) {
+        alert('チラシカテゴリを選択してください')
         return
       }
 
@@ -317,10 +420,6 @@ export default {
       alert(this.isEditMode ? 'チラシを更新しました' : 'チラシを登録しました')
       this.$router.push('/admin/flyers')
     },
-    getStoreName(storeId) {
-      const store = this.stores.find(s => s.id === storeId)
-      return store ? store.name : ''
-    },
     formatDate(dateString) {
       if (!dateString) return ''
       const date = new Date(dateString)
@@ -328,6 +427,16 @@ export default {
       const month = String(date.getMonth() + 1).padStart(2, '0')
       const day = String(date.getDate()).padStart(2, '0')
       return `${year}/${month}/${day}`
+    },
+    getCategoryLabel(category) {
+      const labels = {
+        food: '食品',
+        daily: '日用品',
+        electronics: '家電',
+        fashion: 'ファッション',
+        other: 'その他'
+      }
+      return labels[category] || category
     },
     getStatusLabel(status) {
       const labels = {
@@ -445,6 +554,29 @@ export default {
 .form-select:focus {
   outline: none;
   border-color: var(--primary-color);
+}
+
+.form-input:disabled {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* 掲載期間の横並び表示 */
+.period-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.period-input {
+  flex: 1;
+}
+
+.period-separator {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .error-message {
