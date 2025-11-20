@@ -24,8 +24,10 @@
             type="text"
             placeholder="タイトルまたは本文で検索"
             class="search-input"
-            @input="performSearch"
           />
+          <button @click="performSearch" class="btn-search">
+            🔍 検索
+          </button>
           <button @click="goToCreatePage" class="btn-create">
             ➕ 新規作成
           </button>
@@ -37,7 +39,6 @@
             <select
               v-model="filterStatus"
               class="filter-select"
-              @change="performSearch"
             >
               <option value="">すべて</option>
               <option value="published">公開</option>
@@ -51,7 +52,6 @@
               v-model="filterDate"
               type="date"
               class="filter-input"
-              @change="performSearch"
             />
           </div>
 
@@ -62,7 +62,6 @@
               type="text"
               placeholder="タグで検索"
               class="filter-input"
-              @input="performSearch"
             />
           </div>
         </div>
@@ -99,7 +98,14 @@
           <p>記事が見つかりませんでした</p>
         </div>
 
-        <div v-else class="table-container">
+        <div v-else
+          class="table-container"
+          ref="tableContainer"
+          @mousedown="onMouseDown"
+          @mousemove="onMouseMove"
+          @mouseup="onMouseUp"
+          @mouseleave="onMouseUp"
+        >
           <table class="articles-table">
             <thead>
               <tr>
@@ -120,7 +126,7 @@
             </thead>
             <tbody>
               <tr
-                v-for="article in filteredArticles"
+                v-for="article in paginatedArticles"
                 :key="article.id"
                 :class="{ selected: selectedIds.includes(article.id) }"
               >
@@ -180,6 +186,46 @@
             </tbody>
           </table>
         </div>
+
+        <!-- ページネーション -->
+        <div v-if="totalPages > 1" class="pagination">
+          <button
+            @click="goToFirstPage"
+            :disabled="currentPage === 1"
+            class="pagination-btn"
+          >
+            ≪
+          </button>
+          <button
+            @click="goToPrevPage"
+            :disabled="currentPage === 1"
+            class="pagination-btn"
+          >
+            ‹
+          </button>
+          <button
+            v-for="page in displayedPages"
+            :key="page"
+            @click="goToPage(page)"
+            :class="['pagination-btn', { active: page === currentPage }]"
+          >
+            {{ page }}
+          </button>
+          <button
+            @click="goToNextPage"
+            :disabled="currentPage === totalPages"
+            class="pagination-btn"
+          >
+            ›
+          </button>
+          <button
+            @click="goToLastPage"
+            :disabled="currentPage === totalPages"
+            class="pagination-btn"
+          >
+            ≫
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -198,7 +244,14 @@ export default {
       filterTag: '',
       filterStatus: '',
       loading: false,
-      selectedIds: []
+      selectedIds: [],
+      currentPage: 1,
+      itemsPerPage: 2,
+      isDragging: false,
+      startX: 0,
+      scrollLeft: 0,
+      filteredArticles: [],
+      allArticles: []
     }
   },
   setup() {
@@ -207,7 +260,47 @@ export default {
     return { adminStore, articlesStore }
   },
   computed: {
-    filteredArticles() {
+    paginatedArticles() {
+      const start = (this.currentPage - 1) * this.itemsPerPage
+      const end = start + this.itemsPerPage
+      return this.filteredArticles.slice(start, end)
+    },
+    totalPages() {
+      return Math.ceil(this.filteredArticles.length / this.itemsPerPage)
+    },
+    displayedPages() {
+      const pages = []
+      const total = this.totalPages
+      const current = this.currentPage
+
+      // 現在のページの前後2ページを表示（最大5ページ）
+      let start = Math.max(1, current - 2)
+      let end = Math.min(total, current + 2)
+
+      // 5ページ表示できるように調整
+      if (end - start < 4) {
+        if (start === 1) {
+          end = Math.min(total, start + 4)
+        } else if (end === total) {
+          start = Math.max(1, end - 4)
+        }
+      }
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+
+      return pages
+    },
+    isAllSelected() {
+      return this.paginatedArticles.length > 0 &&
+        this.selectedIds.length === this.filteredArticles.length
+    }
+  },
+  methods: {
+    performSearch() {
+      this.currentPage = 1
+
       let articles = this.articlesStore.searchArticles(
         this.searchQuery,
         '',
@@ -228,16 +321,52 @@ export default {
         })
       }
 
-      return articles
+      this.filteredArticles = articles
     },
-    isAllSelected() {
-      return this.filteredArticles.length > 0 &&
-        this.selectedIds.length === this.filteredArticles.length
-    }
-  },
-  methods: {
-    performSearch() {
-      // リアルタイム検索のためのメソッド（computedで処理）
+    loadAllArticles() {
+      // 初期表示時は全件表示
+      this.filteredArticles = this.articlesStore.searchArticles('', '', '', '')
+      this.allArticles = this.filteredArticles
+    },
+    // ページネーション関連
+    goToPage(page) {
+      this.currentPage = page
+    },
+    goToFirstPage() {
+      this.currentPage = 1
+    },
+    goToLastPage() {
+      this.currentPage = this.totalPages
+    },
+    goToPrevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--
+      }
+    },
+    goToNextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++
+      }
+    },
+    // ドラッグスクロール関連
+    onMouseDown(e) {
+      this.isDragging = true
+      this.startX = e.pageX - this.$refs.tableContainer.offsetLeft
+      this.scrollLeft = this.$refs.tableContainer.scrollLeft
+      this.$refs.tableContainer.style.cursor = 'grabbing'
+    },
+    onMouseMove(e) {
+      if (!this.isDragging) return
+      e.preventDefault()
+      const x = e.pageX - this.$refs.tableContainer.offsetLeft
+      const walk = (x - this.startX) * 2
+      this.$refs.tableContainer.scrollLeft = this.scrollLeft - walk
+    },
+    onMouseUp() {
+      this.isDragging = false
+      if (this.$refs.tableContainer) {
+        this.$refs.tableContainer.style.cursor = 'grab'
+      }
     },
     formatDate(dateString) {
       const date = new Date(dateString)
@@ -319,7 +448,18 @@ export default {
     this.adminStore.checkAuth()
     if (!this.adminStore.isAuthenticated) {
       this.$router.push('/admin/login')
+      return
     }
+
+    // 権限チェック（システム管理者のみ）
+    if (!this.adminStore.isSystemAdmin) {
+      alert('この機能はシステム管理者のみ利用可能です')
+      this.$router.push('/admin')
+      return
+    }
+
+    // データロード
+    this.loadAllArticles()
   }
 }
 </script>
@@ -434,6 +574,25 @@ export default {
 
 .search-input:focus {
   border-color: var(--primary-color);
+}
+
+.btn-search {
+  padding: 12px 24px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-search:hover {
+  background-color: #5a67d8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .btn-create {
@@ -585,6 +744,12 @@ export default {
 /* テーブル */
 .table-container {
   overflow-x: auto;
+  cursor: grab;
+  user-select: none;
+}
+
+.table-container:active {
+  cursor: grabbing;
 }
 
 .articles-table {
@@ -722,6 +887,49 @@ export default {
 .btn-icon:hover {
   background-color: var(--bg-light);
   transform: scale(1.1);
+}
+
+/* ページネーション */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid var(--border-color);
+}
+
+.pagination-btn {
+  min-width: 40px;
+  height: 40px;
+  padding: 8px 12px;
+  background-color: white;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.pagination-btn.active {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

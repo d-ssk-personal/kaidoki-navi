@@ -19,169 +19,187 @@
 
     <div class="page-content">
       <form @submit.prevent="showConfirmModal" class="flyer-form">
-        <!-- 企業ID -->
-        <div class="form-group">
-          <label class="form-label">企業ID</label>
-          <input
-            v-model="form.companyId"
-            type="text"
-            class="form-input"
-            disabled
-          />
-        </div>
-
-        <!-- 店舗ID -->
-        <div class="form-group">
-          <label class="form-label">店舗ID</label>
-          <input
-            v-model="form.storeId"
-            type="text"
-            class="form-input"
-            disabled
-          />
-        </div>
-
-        <!-- 企業名 -->
-        <div class="form-group">
-          <label class="form-label">企業名</label>
-          <input
-            v-model="form.companyName"
-            type="text"
-            class="form-input"
-            disabled
-          />
-        </div>
-
-        <!-- 店舗名 -->
-        <div class="form-group">
-          <label class="form-label">店舗名</label>
-          <input
-            v-model="form.storeName"
-            type="text"
-            class="form-input"
-            disabled
-          />
-        </div>
-
-        <!-- 住所 -->
-        <div class="form-group">
-          <label class="form-label">住所</label>
-          <input
-            v-model="form.address"
-            type="text"
-            class="form-input"
-            disabled
-          />
-        </div>
-
-        <!-- チラシタイトル -->
-        <div class="form-group">
-          <label class="form-label required">チラシタイトル</label>
-          <input
-            v-model="form.title"
-            type="text"
-            class="form-input"
-            placeholder="チラシタイトルを入力してください"
-            required
-          />
-        </div>
-
-        <!-- チラシ画像 -->
-        <div class="form-group">
-          <label class="form-label">チラシ画像（最大5枚）</label>
-          <div class="image-upload-section">
-            <input
-              ref="fileInput"
-              type="file"
-              accept="image/*"
-              multiple
-              @change="handleFileChange"
-              class="file-input"
-            />
-            <button
-              type="button"
-              class="btn-upload"
-              @click="$refs.fileInput.click()"
-              :disabled="form.images.length >= 5"
-            >
-              + 画像を選択
-            </button>
-            <p class="upload-hint">
-              {{ form.images.length }}/5 枚選択済み
-            </p>
+        <!-- 店舗情報セクション -->
+        <div class="form-section">
+          <div class="section-header" @click="toggleStoreInfoSection">
+            <h3 class="section-title">店舗情報</h3>
+            <span class="section-toggle">{{ storeInfoExpanded ? '▼' : '▶' }}</span>
           </div>
+          <div v-show="storeInfoExpanded" class="section-content">
+            <!-- 企業ID -->
+            <div class="form-group">
+              <label class="form-label">企業ID</label>
+              <input
+                v-model="form.companyId"
+                type="text"
+                class="form-input"
+                disabled
+              />
+            </div>
 
-          <!-- 画像プレビュー -->
-          <div v-if="form.images.length > 0" class="image-previews">
-            <div
-              v-for="(image, index) in form.images"
-              :key="index"
-              class="image-preview"
-            >
-              <img :src="image.preview" :alt="`画像 ${index + 1}`" />
-              <button
-                type="button"
-                class="btn-remove-image"
-                @click="removeImage(index)"
-              >
-                ✕
-              </button>
+            <!-- 店舗ID -->
+            <div class="form-group">
+              <label class="form-label">店舗ID</label>
+              <input
+                v-model="form.storeId"
+                type="text"
+                class="form-input"
+                disabled
+              />
+            </div>
+
+            <!-- 企業名 -->
+            <div class="form-group">
+              <label class="form-label">企業名</label>
+              <input
+                v-model="form.companyName"
+                type="text"
+                class="form-input"
+                disabled
+              />
+            </div>
+
+            <!-- 店舗名 -->
+            <div class="form-group">
+              <label class="form-label">店舗名</label>
+              <input
+                v-model="form.storeName"
+                type="text"
+                class="form-input"
+                disabled
+              />
+            </div>
+
+            <!-- 住所 -->
+            <div class="form-group">
+              <label class="form-label">住所</label>
+              <input
+                v-model="form.address"
+                type="text"
+                class="form-input"
+                disabled
+              />
             </div>
           </div>
         </div>
 
-        <!-- 掲載期間 -->
-        <div class="form-group">
-          <label class="form-label required">掲載期間</label>
-          <div class="period-row">
-            <input
-              v-model="form.periodFrom"
-              type="date"
-              class="form-input period-input"
-              required
-            />
-            <span class="period-separator">〜</span>
-            <input
-              v-model="form.periodTo"
-              type="date"
-              class="form-input period-input"
-              required
-            />
+        <!-- チラシ情報セクション -->
+        <div class="form-section">
+          <div class="section-header" @click="toggleFlyerInfoSection">
+            <h3 class="section-title">チラシ情報</h3>
+            <span class="section-toggle">{{ flyerInfoExpanded ? '▼' : '▶' }}</span>
           </div>
-          <p v-if="periodToError" class="error-message">
-            {{ periodToError }}
-          </p>
-        </div>
+          <div v-show="flyerInfoExpanded" class="section-content">
+            <!-- チラシタイトル -->
+            <div class="form-group">
+              <label class="form-label required">チラシタイトル</label>
+              <input
+                v-model="form.title"
+                type="text"
+                class="form-input"
+                placeholder="チラシタイトルを入力してください"
+                required
+              />
+            </div>
 
-        <!-- チラシカテゴリ -->
-        <div class="form-group">
-          <label class="form-label required">チラシカテゴリ</label>
-          <select
-            v-model="form.category"
-            class="form-input"
-            required
-          >
-            <option value="">カテゴリを選択してください</option>
-            <option value="food">食品</option>
-            <option value="daily">日用品</option>
-            <option value="electronics">家電</option>
-            <option value="fashion">ファッション</option>
-            <option value="other">その他</option>
-          </select>
-        </div>
+            <!-- チラシ画像 -->
+            <div class="form-group">
+              <label class="form-label">チラシ画像（最大5枚）</label>
+              <div class="image-upload-section">
+                <input
+                  ref="fileInput"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  @change="handleFileChange"
+                  class="file-input"
+                />
+                <button
+                  type="button"
+                  class="btn-upload"
+                  @click="$refs.fileInput.click()"
+                  :disabled="form.images.length >= 5"
+                >
+                  + 画像を選択
+                </button>
+                <p class="upload-hint">
+                  {{ form.images.length }}/5 枚選択済み
+                </p>
+              </div>
 
-        <!-- 掲載ステータス -->
-        <div class="form-group">
-          <label class="form-label required">掲載ステータス</label>
-          <select
-            v-model="form.status"
-            class="form-input"
-            required
-          >
-            <option value="active">掲載中</option>
-            <option value="inactive">掲載終了</option>
-            <option value="scheduled">掲載予定</option>
-          </select>
+              <!-- 画像プレビュー -->
+              <div v-if="form.images.length > 0" class="image-previews">
+                <div
+                  v-for="(image, index) in form.images"
+                  :key="index"
+                  class="image-preview"
+                >
+                  <img :src="image.preview" :alt="`画像 ${index + 1}`" />
+                  <button
+                    type="button"
+                    class="btn-remove-image"
+                    @click="removeImage(index)"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 掲載期間 -->
+            <div class="form-group">
+              <label class="form-label required">掲載期間</label>
+              <div class="period-row">
+                <input
+                  v-model="form.periodFrom"
+                  type="date"
+                  class="form-input period-input"
+                  required
+                />
+                <span class="period-separator">〜</span>
+                <input
+                  v-model="form.periodTo"
+                  type="date"
+                  class="form-input period-input"
+                  required
+                />
+              </div>
+              <p v-if="periodToError" class="error-message">
+                {{ periodToError }}
+              </p>
+            </div>
+
+            <!-- チラシカテゴリ -->
+            <div class="form-group">
+              <label class="form-label required">チラシカテゴリ</label>
+              <select
+                v-model="form.category"
+                class="form-input"
+                required
+              >
+                <option value="">カテゴリを選択してください</option>
+                <option value="food">食品</option>
+                <option value="daily">日用品</option>
+                <option value="electronics">家電</option>
+                <option value="fashion">ファッション</option>
+                <option value="other">その他</option>
+              </select>
+            </div>
+
+            <!-- 掲載ステータス -->
+            <div class="form-group">
+              <label class="form-label required">掲載ステータス</label>
+              <select
+                v-model="form.status"
+                class="form-input"
+                required
+              >
+                <option value="active">掲載中</option>
+                <option value="inactive">掲載終了</option>
+                <option value="scheduled">掲載予定</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <!-- フォームアクション -->
@@ -287,6 +305,8 @@ export default {
     return {
       isEditMode: false,
       showModal: false,
+      storeInfoExpanded: false,
+      flyerInfoExpanded: true,
       form: {
         companyId: '',
         storeId: '',
@@ -328,6 +348,12 @@ export default {
     }
   },
   methods: {
+    toggleStoreInfoSection() {
+      this.storeInfoExpanded = !this.storeInfoExpanded
+    },
+    toggleFlyerInfoSection() {
+      this.flyerInfoExpanded = !this.flyerInfoExpanded
+    },
     loadFlyer(id) {
       // 実際のAPIからデータを取得する場合はここで実装
       // ダミーデータで初期化
@@ -568,8 +594,53 @@ export default {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* アコーディオンセクション */
+.form-section {
+  margin-bottom: 24px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: var(--bg-light);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  user-select: none;
+}
+
+.section-header:hover {
+  background-color: #e5e7eb;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.section-toggle {
+  font-size: 16px;
+  color: var(--text-secondary);
+  transition: transform 0.3s ease;
+}
+
+.section-content {
+  padding: 24px;
+  border-top: 1px solid var(--border-color);
+}
+
 .form-group {
   margin-bottom: 24px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
 }
 
 .form-label {

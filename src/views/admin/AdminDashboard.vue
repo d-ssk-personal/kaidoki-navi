@@ -28,7 +28,7 @@
 
         <!-- 店舗管理 - システム管理者のみ -->
         <router-link
-          v-if="adminStore.isSystemAdmin"
+          v-if="adminStore.isSystemAdmin || adminStore.isCompanyAdmin"
           to="/admin/stores"
           class="menu-card"
         >

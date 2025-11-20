@@ -24,8 +24,10 @@
             type="text"
             placeholder="企業名または担当者氏名で検索"
             class="search-input"
-            @input="performSearch"
           />
+          <button @click="performSearch" class="btn-search">
+            🔍 検索
+          </button>
           <button @click="goToCreatePage" class="btn-create">
             ➕ 新規作成
           </button>
@@ -37,7 +39,6 @@
             <select
               v-model="filterContractStatus"
               class="filter-select"
-              @change="performSearch"
             >
               <option value="">すべて</option>
               <option value="active">有効</option>
@@ -51,7 +52,6 @@
             <select
               v-model="filterContractPlan"
               class="filter-select"
-              @change="performSearch"
             >
               <option value="">すべて</option>
               <option value="basic">ベーシック</option>
@@ -90,7 +90,14 @@
           <p>企業が見つかりませんでした</p>
         </div>
 
-        <div v-else class="table-container">
+        <div v-else
+          class="table-container"
+          ref="tableContainer"
+          @mousedown="onMouseDown"
+          @mousemove="onMouseMove"
+          @mouseup="onMouseUp"
+          @mouseleave="onMouseUp"
+        >
           <table class="companies-table">
             <thead>
               <tr>
@@ -116,7 +123,7 @@
             </thead>
             <tbody>
               <tr
-                v-for="company in filteredCompanies"
+                v-for="company in paginatedCompanies"
                 :key="company.id"
                 :class="{ selected: selectedIds.includes(company.id) }"
               >
@@ -174,6 +181,46 @@
             </tbody>
           </table>
         </div>
+
+        <!-- ページネーション -->
+        <div v-if="totalPages > 1" class="pagination">
+          <button
+            @click="goToFirstPage"
+            :disabled="currentPage === 1"
+            class="pagination-btn"
+          >
+            ≪
+          </button>
+          <button
+            @click="goToPrevPage"
+            :disabled="currentPage === 1"
+            class="pagination-btn"
+          >
+            ‹
+          </button>
+          <button
+            v-for="page in displayedPages"
+            :key="page"
+            @click="goToPage(page)"
+            :class="['pagination-btn', { active: page === currentPage }]"
+          >
+            {{ page }}
+          </button>
+          <button
+            @click="goToNextPage"
+            :disabled="currentPage === totalPages"
+            class="pagination-btn"
+          >
+            ›
+          </button>
+          <button
+            @click="goToLastPage"
+            :disabled="currentPage === totalPages"
+            class="pagination-btn"
+          >
+            ≫
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -191,7 +238,15 @@ export default {
       filterContractPlan: '',
       loading: false,
       selectedIds: [],
-      companies: []
+      companies: [],
+      allCompanies: [],
+      filteredCompanies: [],
+      currentPage: 1,
+      itemsPerPage: 2,
+      isDragging: false,
+      startX: 0,
+      scrollLeft: 0,
+      searchTriggered: false
     }
   },
   setup() {
@@ -199,7 +254,48 @@ export default {
     return { adminStore }
   },
   computed: {
-    filteredCompanies() {
+    paginatedCompanies() {
+      const start = (this.currentPage - 1) * this.itemsPerPage
+      const end = start + this.itemsPerPage
+      return this.filteredCompanies.slice(start, end)
+    },
+    totalPages() {
+      return Math.ceil(this.filteredCompanies.length / this.itemsPerPage)
+    },
+    displayedPages() {
+      const pages = []
+      const total = this.totalPages
+      const current = this.currentPage
+
+      // 現在のページの前後2ページを表示（最大5ページ）
+      let start = Math.max(1, current - 2)
+      let end = Math.min(total, current + 2)
+
+      // 5ページ表示できるように調整
+      if (end - start < 4) {
+        if (start === 1) {
+          end = Math.min(total, start + 4)
+        } else if (end === total) {
+          start = Math.max(1, end - 4)
+        }
+      }
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+
+      return pages
+    },
+    isAllSelected() {
+      return this.paginatedCompanies.length > 0 &&
+        this.selectedIds.length === this.filteredCompanies.length
+    }
+  },
+  methods: {
+    performSearch() {
+      this.searchTriggered = true
+      this.currentPage = 1
+
       let companies = [...this.companies]
 
       // 企業名または担当者氏名で検索
@@ -221,16 +317,51 @@ export default {
         companies = companies.filter(c => c.contractPlan === this.filterContractPlan)
       }
 
-      return companies
+      this.filteredCompanies = companies
     },
-    isAllSelected() {
-      return this.filteredCompanies.length > 0 &&
-        this.selectedIds.length === this.filteredCompanies.length
-    }
-  },
-  methods: {
-    performSearch() {
-      // リアルタイム検索のためのメソッド（computedで処理）
+    loadAllCompanies() {
+      // 初期表示時は全企業を表示
+      this.filteredCompanies = [...this.companies]
+    },
+    // ページネーション関連
+    goToPage(page) {
+      this.currentPage = page
+    },
+    goToFirstPage() {
+      this.currentPage = 1
+    },
+    goToLastPage() {
+      this.currentPage = this.totalPages
+    },
+    goToPrevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--
+      }
+    },
+    goToNextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++
+      }
+    },
+    // ドラッグスクロール関連
+    onMouseDown(e) {
+      this.isDragging = true
+      this.startX = e.pageX - this.$refs.tableContainer.offsetLeft
+      this.scrollLeft = this.$refs.tableContainer.scrollLeft
+      this.$refs.tableContainer.style.cursor = 'grabbing'
+    },
+    onMouseMove(e) {
+      if (!this.isDragging) return
+      e.preventDefault()
+      const x = e.pageX - this.$refs.tableContainer.offsetLeft
+      const walk = (x - this.startX) * 2
+      this.$refs.tableContainer.scrollLeft = this.scrollLeft - walk
+    },
+    onMouseUp() {
+      this.isDragging = false
+      if (this.$refs.tableContainer) {
+        this.$refs.tableContainer.style.cursor = 'grab'
+      }
     },
     getStatusLabel(status) {
       const labels = {
@@ -310,11 +441,11 @@ export default {
         {
           id: 1,
           companyId: 'COMP001',
-          name: '株式会社サンプル商事',
+          name: '株式会社マルエツ',
           address: '東京都千代田区丸の内1-1-1',
           contactName: '山田太郎',
           phone: '03-1234-5678',
-          email: 'yamada@sample.co.jp',
+          email: 'yamada@maruetsu.co.jp',
           contractStatus: 'active',
           contractPlan: 'premium',
           contractStartDate: '2024-01-01',
@@ -323,11 +454,11 @@ export default {
         {
           id: 2,
           companyId: 'COMP002',
-          name: 'テスト株式会社',
+          name: '株式会社ライフコーポレーション',
           address: '大阪府大阪市北区梅田2-2-2',
           contactName: '佐藤花子',
           phone: '06-9876-5432',
-          email: 'sato@test.co.jp',
+          email: 'sato@lifecorp.co.jp',
           contractStatus: 'active',
           contractPlan: 'standard',
           contractStartDate: '2024-03-01',
@@ -336,28 +467,236 @@ export default {
         {
           id: 3,
           companyId: 'COMP003',
-          name: '有限会社サンプル',
-          address: '愛知県名古屋市中区栄3-3-3',
+          name: '株式会社イオンリテール',
+          address: '千葉県千葉市美浜区中瀬1-5-1',
           contactName: '鈴木一郎',
-          phone: '052-1111-2222',
-          email: 'suzuki@sample-ltd.co.jp',
-          contractStatus: 'expired',
-          contractPlan: 'basic',
-          contractStartDate: '2023-01-01',
-          contractEndDate: '2023-12-31'
+          phone: '043-212-6000',
+          email: 'suzuki@aeon.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'premium',
+          contractStartDate: '2023-04-01',
+          contractEndDate: '2025-03-31'
         },
         {
           id: 4,
           companyId: 'COMP004',
-          name: 'サンプルコーポレーション',
-          address: '福岡県福岡市博多区博多駅前4-4-4',
+          name: '株式会社サミットストア',
+          address: '東京都杉並区永福2-54-7',
           contactName: '田中次郎',
-          phone: '092-3333-4444',
-          email: 'tanaka@samplecorp.co.jp',
-          contractStatus: 'suspended',
+          phone: '03-3328-1111',
+          email: 'tanaka@summitstore.co.jp',
+          contractStatus: 'active',
           contractPlan: 'standard',
           contractStartDate: '2024-02-01',
           contractEndDate: '2025-01-31'
+        },
+        {
+          id: 5,
+          companyId: 'COMP005',
+          name: '株式会社ヨークベニマル',
+          address: '福島県郡山市中町17-1',
+          contactName: '高橋美咲',
+          phone: '024-923-1111',
+          email: 'takahashi@yorkbenimaru.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'basic',
+          contractStartDate: '2024-05-01',
+          contractEndDate: '2025-04-30'
+        },
+        {
+          id: 6,
+          companyId: 'COMP006',
+          name: '株式会社西友',
+          address: '東京都北区赤羽2-1-1',
+          contactName: '渡辺健太',
+          phone: '03-3903-5111',
+          email: 'watanabe@seiyu.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'premium',
+          contractStartDate: '2023-10-01',
+          contractEndDate: '2025-09-30'
+        },
+        {
+          id: 7,
+          companyId: 'COMP007',
+          name: '株式会社イトーヨーカ堂',
+          address: '東京都千代田区二番町8-8',
+          contactName: '伊藤真理子',
+          phone: '03-6238-3000',
+          email: 'ito@itoyokado.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'premium',
+          contractStartDate: '2024-01-15',
+          contractEndDate: '2026-01-14'
+        },
+        {
+          id: 8,
+          companyId: 'COMP008',
+          name: '株式会社ベルク',
+          address: '埼玉県鶴ヶ島市脚折1513',
+          contactName: '小林誠',
+          phone: '049-286-0001',
+          email: 'kobayashi@belc.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'standard',
+          contractStartDate: '2024-06-01',
+          contractEndDate: '2025-05-31'
+        },
+        {
+          id: 9,
+          companyId: 'COMP009',
+          name: '株式会社オーケー',
+          address: '神奈川県横浜市西区みなとみらい3-3-3',
+          contactName: '加藤由美',
+          phone: '045-680-0123',
+          email: 'kato@ok-corporation.co.jp',
+          contractStatus: 'inactive',
+          contractPlan: 'basic',
+          contractStartDate: '2023-08-01',
+          contractEndDate: '2024-07-31'
+        },
+        {
+          id: 10,
+          companyId: 'COMP010',
+          name: '株式会社バロー',
+          address: '岐阜県多治見市大針町661-1',
+          contactName: '中村修',
+          phone: '0572-20-1100',
+          email: 'nakamura@valor.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'standard',
+          contractStartDate: '2024-04-01',
+          contractEndDate: '2025-03-31'
+        },
+        {
+          id: 11,
+          companyId: 'COMP011',
+          name: '株式会社アークス',
+          address: '北海道札幌市中央区南13条西11-2-32',
+          contactName: '木村恵子',
+          phone: '011-530-6100',
+          email: 'kimura@arcs-group.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'premium',
+          contractStartDate: '2023-11-01',
+          contractEndDate: '2025-10-31'
+        },
+        {
+          id: 12,
+          companyId: 'COMP012',
+          name: '株式会社万代',
+          address: '大阪府大阪市住之江区泉1-1-82',
+          contactName: '林大輔',
+          phone: '06-6681-3000',
+          email: 'hayashi@mandai.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'basic',
+          contractStartDate: '2024-07-01',
+          contractEndDate: '2025-06-30'
+        },
+        {
+          id: 13,
+          companyId: 'COMP013',
+          name: '株式会社平和堂',
+          address: '滋賀県彦根市西今町1',
+          contactName: '森下智子',
+          phone: '0749-23-3111',
+          email: 'morishita@heiwado.jp',
+          contractStatus: 'active',
+          contractPlan: 'standard',
+          contractStartDate: '2024-02-15',
+          contractEndDate: '2025-02-14'
+        },
+        {
+          id: 14,
+          companyId: 'COMP014',
+          name: '株式会社フジ',
+          address: '愛媛県松山市宮西1-2-1',
+          contactName: '藤田浩二',
+          phone: '089-933-2600',
+          email: 'fujita@the-fuji.com',
+          contractStatus: 'suspended',
+          contractPlan: 'standard',
+          contractStartDate: '2023-12-01',
+          contractEndDate: '2024-11-30'
+        },
+        {
+          id: 15,
+          companyId: 'COMP015',
+          name: '株式会社マックスバリュ東海',
+          address: '静岡県浜松市中区砂山町1-1',
+          contactName: '松本香織',
+          phone: '053-451-5000',
+          email: 'matsumoto@mv-tokai.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'premium',
+          contractStartDate: '2024-03-15',
+          contractEndDate: '2026-03-14'
+        },
+        {
+          id: 16,
+          companyId: 'COMP016',
+          name: '株式会社ヤオコー',
+          address: '埼玉県川越市新富町1-22',
+          contactName: '井上勇',
+          phone: '049-227-6211',
+          email: 'inoue@yaoko.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'standard',
+          contractStartDate: '2024-08-01',
+          contractEndDate: '2025-07-31'
+        },
+        {
+          id: 17,
+          companyId: 'COMP017',
+          name: '株式会社ダイエー',
+          address: '兵庫県神戸市中央区港島中町6-2-1',
+          contactName: '清水明美',
+          phone: '078-302-5000',
+          email: 'shimizu@daiei.co.jp',
+          contractStatus: 'expired',
+          contractPlan: 'basic',
+          contractStartDate: '2022-09-01',
+          contractEndDate: '2023-08-31'
+        },
+        {
+          id: 18,
+          companyId: 'COMP018',
+          name: '株式会社コープさっぽろ',
+          address: '北海道札幌市西区発寒11条5-10-1',
+          contactName: '石川直樹',
+          phone: '011-668-8000',
+          email: 'ishikawa@sapporo.coop',
+          contractStatus: 'active',
+          contractPlan: 'standard',
+          contractStartDate: '2024-09-01',
+          contractEndDate: '2025-08-31'
+        },
+        {
+          id: 19,
+          companyId: 'COMP019',
+          name: '株式会社マルナカ',
+          address: '香川県高松市丸亀町13-3',
+          contactName: '岡田聡子',
+          phone: '087-851-1515',
+          email: 'okada@marunaka.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'basic',
+          contractStartDate: '2024-10-01',
+          contractEndDate: '2025-09-30'
+        },
+        {
+          id: 20,
+          companyId: 'COMP020',
+          name: '株式会社サンリブ',
+          address: '福岡県北九州市小倉南区上葛原2-14-1',
+          contactName: '前田和彦',
+          phone: '093-932-1700',
+          email: 'maeda@sunlive.co.jp',
+          contractStatus: 'active',
+          contractPlan: 'premium',
+          contractStartDate: '2023-06-01',
+          contractEndDate: '2025-05-31'
         }
       ]
     }
@@ -369,14 +708,16 @@ export default {
       this.$router.push('/admin/login')
       return
     }
-    // システム管理者のみアクセス可能
+
+    // 権限チェック（システム管理者のみ）
     if (!this.adminStore.isSystemAdmin) {
-      alert('この機能はシステム管理者のみ利用できます')
+      alert('この機能はシステム管理者のみ利用可能です')
       this.$router.push('/admin')
       return
     }
 
     this.loadCompanies()
+    this.loadAllCompanies()
   }
 }
 </script>
@@ -491,6 +832,25 @@ export default {
 
 .search-input:focus {
   border-color: var(--primary-color);
+}
+
+.btn-search {
+  padding: 12px 24px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-search:hover {
+  background-color: #5a67d8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .btn-create {
@@ -627,6 +987,12 @@ export default {
 /* テーブル */
 .table-container {
   overflow-x: auto;
+  cursor: grab;
+  user-select: none;
+}
+
+.table-container:active {
+  cursor: grabbing;
 }
 
 .companies-table {
@@ -786,6 +1152,49 @@ export default {
 .btn-icon:hover {
   background-color: var(--bg-light);
   transform: scale(1.1);
+}
+
+/* ページネーション */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid var(--border-color);
+}
+
+.pagination-btn {
+  min-width: 40px;
+  height: 40px;
+  padding: 8px 12px;
+  background-color: white;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.pagination-btn.active {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

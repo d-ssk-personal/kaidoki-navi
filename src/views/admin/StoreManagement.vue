@@ -24,22 +24,23 @@
             type="text"
             placeholder="店舗名、住所、電話番号で検索"
             class="search-input"
-            @input="performSearch"
           />
+          <button @click="performSearch" class="btn-search">
+            🔍 検索
+          </button>
           <button @click="goToCreatePage" class="btn-create">
             ➕ 新規作成
           </button>
         </div>
 
         <div class="filter-row">
-          <div class="filter-group">
+          <div class="filter-group" v-if="adminStore.isSystemAdmin">
             <label class="filter-label">企業ID:</label>
             <input
               v-model="filterCompanyId"
               type="text"
               placeholder="企業IDで検索"
               class="filter-input"
-              @input="performSearch"
             />
           </div>
 
@@ -50,7 +51,6 @@
               type="text"
               placeholder="店舗IDで検索"
               class="filter-input"
-              @input="performSearch"
             />
           </div>
 
@@ -59,12 +59,51 @@
             <select
               v-model="filterStatus"
               class="filter-select"
-              @change="performSearch"
             >
               <option value="">すべて</option>
               <option value="active">有効</option>
               <option value="inactive">無効</option>
             </select>
+          </div>
+
+          <div class="filter-group" v-if="adminStore.isSystemAdmin">
+            <label class="filter-label">企業名:</label>
+            <input
+              v-model="filterCompanyName"
+              type="text"
+              placeholder="企業名で検索"
+              class="filter-input"
+            />
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">店舗名:</label>
+            <input
+              v-model="filterStoreName"
+              type="text"
+              placeholder="店舗名で検索"
+              class="filter-input"
+            />
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">住所:</label>
+            <input
+              v-model="filterAddress"
+              type="text"
+              placeholder="住所で検索"
+              class="filter-input"
+            />
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">電話番号:</label>
+            <input
+              v-model="filterPhone"
+              type="text"
+              placeholder="電話番号で検索"
+              class="filter-input"
+            />
           </div>
         </div>
 
@@ -100,7 +139,14 @@
           <p>店舗が見つかりませんでした</p>
         </div>
 
-        <div v-else class="table-container">
+        <div v-else
+          class="table-container"
+          ref="tableContainer"
+          @mousedown="onMouseDown"
+          @mousemove="onMouseMove"
+          @mouseup="onMouseUp"
+          @mouseleave="onMouseUp"
+        >
           <table class="stores-table">
             <thead>
               <tr>
@@ -122,7 +168,7 @@
             </thead>
             <tbody>
               <tr
-                v-for="store in filteredStores"
+                v-for="store in paginatedStores"
                 :key="store.id"
                 :class="{ selected: selectedIds.includes(store.id) }"
               >
@@ -173,6 +219,46 @@
             </tbody>
           </table>
         </div>
+
+        <!-- ページネーション -->
+        <div v-if="totalPages > 1" class="pagination">
+          <button
+            @click="goToFirstPage"
+            :disabled="currentPage === 1"
+            class="pagination-btn"
+          >
+            ≪
+          </button>
+          <button
+            @click="goToPrevPage"
+            :disabled="currentPage === 1"
+            class="pagination-btn"
+          >
+            ‹
+          </button>
+          <button
+            v-for="page in displayedPages"
+            :key="page"
+            @click="goToPage(page)"
+            :class="['pagination-btn', { active: page === currentPage }]"
+          >
+            {{ page }}
+          </button>
+          <button
+            @click="goToNextPage"
+            :disabled="currentPage === totalPages"
+            class="pagination-btn"
+          >
+            ›
+          </button>
+          <button
+            @click="goToLastPage"
+            :disabled="currentPage === totalPages"
+            class="pagination-btn"
+          >
+            ≫
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -189,9 +275,21 @@ export default {
       filterCompanyId: '',
       filterStoreId: '',
       filterStatus: '',
+      filterCompanyName: '',
+      filterStoreName: '',
+      filterAddress: '',
+      filterPhone: '',
       loading: false,
       selectedIds: [],
-      stores: []
+      stores: [],
+      allStores: [],
+      filteredStores: [],
+      currentPage: 1,
+      itemsPerPage: 2,
+      isDragging: false,
+      startX: 0,
+      scrollLeft: 0,
+      searchTriggered: false
     }
   },
   setup() {
@@ -199,8 +297,51 @@ export default {
     return { adminStore }
   },
   computed: {
-    filteredStores() {
-      let stores = [...this.stores]
+    paginatedStores() {
+      const start = (this.currentPage - 1) * this.itemsPerPage
+      const end = start + this.itemsPerPage
+      return this.filteredStores.slice(start, end)
+    },
+    totalPages() {
+      return Math.ceil(this.filteredStores.length / this.itemsPerPage)
+    },
+    displayedPages() {
+      const pages = []
+      const total = this.totalPages
+      const current = this.currentPage
+
+      // 現在のページの前後2ページを表示（最大5ページ）
+      let start = Math.max(1, current - 2)
+      let end = Math.min(total, current + 2)
+
+      // 5ページ表示できるように調整
+      if (end - start < 4) {
+        if (start === 1) {
+          end = Math.min(total, start + 4)
+        } else if (end === total) {
+          start = Math.max(1, end - 4)
+        }
+      }
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+
+      return pages
+    },
+    isAllSelected() {
+      return this.paginatedStores.length > 0 &&
+        this.selectedIds.length === this.filteredStores.length
+    }
+  },
+  methods: {
+    performSearch() {
+      let stores = [...this.allStores]
+
+      // 企業管理者は自社の店舗のみ表示
+      if (this.adminStore.isCompanyAdmin) {
+        stores = stores.filter(s => s.companyId === this.adminStore.userCompanyId)
+      }
 
       // 店舗名、住所、電話番号で検索
       if (this.searchQuery.trim()) {
@@ -212,33 +353,100 @@ export default {
         )
       }
 
-      // 企業IDフィルター
+      // 企業名フィルター
+      if (this.filterCompanyName.trim()) {
+        const query = this.filterCompanyName.toLowerCase()
+        stores = stores.filter(s => s.companyId.toLowerCase().includes(query))
+      }
+
+      // 店舗名フィルター
+      if (this.filterStoreName.trim()) {
+        const query = this.filterStoreName.toLowerCase()
+        stores = stores.filter(s => s.name.toLowerCase().includes(query))
+      }
+
+      // 住所フィルター
+      if (this.filterAddress.trim()) {
+        const query = this.filterAddress.toLowerCase()
+        stores = stores.filter(s => s.address.toLowerCase().includes(query))
+      }
+
+      // 電話番号フィルター
+      if (this.filterPhone.trim()) {
+        const query = this.filterPhone.toLowerCase()
+        stores = stores.filter(s => s.phone.toLowerCase().includes(query))
+      }
+
+      // 企業IDフィルター（システム管理者のみ）
       if (this.filterCompanyId.trim()) {
         const query = this.filterCompanyId.toLowerCase()
         stores = stores.filter(s => s.companyId.toLowerCase().includes(query))
       }
 
-      // 店舗IDフィルター
+      // 店舗IDフィルター（システム管理者のみ）
       if (this.filterStoreId.trim()) {
         const query = this.filterStoreId.toLowerCase()
         stores = stores.filter(s => s.storeId.toLowerCase().includes(query))
       }
 
-      // ステータスフィルター
+      // ステータスフィルター（システム管理者のみ）
       if (this.filterStatus) {
         stores = stores.filter(s => s.status === this.filterStatus)
       }
 
-      return stores
+      this.filteredStores = stores
+      this.searchTriggered = true
+      this.currentPage = 1
     },
-    isAllSelected() {
-      return this.filteredStores.length > 0 &&
-        this.selectedIds.length === this.filteredStores.length
-    }
-  },
-  methods: {
-    performSearch() {
-      // リアルタイム検索のためのメソッド（computedで処理）
+    loadAllStores() {
+      let stores = [...this.allStores]
+
+      // 企業管理者は自社の店舗のみ表示
+      if (this.adminStore.isCompanyAdmin) {
+        stores = stores.filter(s => s.companyId === this.adminStore.userCompanyId)
+      }
+
+      this.filteredStores = stores
+    },
+    // ページネーション関連
+    goToPage(page) {
+      this.currentPage = page
+    },
+    goToFirstPage() {
+      this.currentPage = 1
+    },
+    goToLastPage() {
+      this.currentPage = this.totalPages
+    },
+    goToPrevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--
+      }
+    },
+    goToNextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++
+      }
+    },
+    // ドラッグスクロール関連
+    onMouseDown(e) {
+      this.isDragging = true
+      this.startX = e.pageX - this.$refs.tableContainer.offsetLeft
+      this.scrollLeft = this.$refs.tableContainer.scrollLeft
+      this.$refs.tableContainer.style.cursor = 'grabbing'
+    },
+    onMouseMove(e) {
+      if (!this.isDragging) return
+      e.preventDefault()
+      const x = e.pageX - this.$refs.tableContainer.offsetLeft
+      const walk = (x - this.startX) * 2
+      this.$refs.tableContainer.scrollLeft = this.scrollLeft - walk
+    },
+    onMouseUp() {
+      this.isDragging = false
+      if (this.$refs.tableContainer) {
+        this.$refs.tableContainer.style.cursor = 'grab'
+      }
     },
     goToCreatePage() {
       this.$router.push('/admin/stores/new')
@@ -314,9 +522,9 @@ export default {
           id: 1,
           companyId: 'COMP001',
           storeId: 'STORE001',
-          name: 'イオン大宮店',
-          address: '埼玉県さいたま市大宮区桜木町2-3',
-          phone: '048-123-4567',
+          name: 'マルエツ赤坂店',
+          address: '東京都港区赤坂3-10-15',
+          phone: '03-3583-1234',
           status: 'active'
         },
         {
@@ -325,7 +533,7 @@ export default {
           storeId: 'STORE002',
           name: 'マルエツ浦和店',
           address: '埼玉県さいたま市浦和区高砂1-2-1',
-          phone: '048-234-5678',
+          phone: '048-825-5678',
           status: 'active'
         },
         {
@@ -333,29 +541,165 @@ export default {
           companyId: 'COMP002',
           storeId: 'STORE003',
           name: 'ライフ品川店',
-          address: '東京都品川区北品川1-1-1',
-          phone: '03-1111-2222',
+          address: '東京都品川区北品川5-5-15',
+          phone: '03-5479-1234',
           status: 'active'
         },
         {
           id: 4,
           companyId: 'COMP002',
           storeId: 'STORE004',
-          name: 'サミット渋谷店',
-          address: '東京都渋谷区道玄坂2-3-1',
-          phone: '03-3333-4444',
-          status: 'inactive'
+          name: 'ライフ梅田店',
+          address: '大阪府大阪市北区梅田1-11-4',
+          phone: '06-6343-5678',
+          status: 'active'
         },
         {
           id: 5,
           companyId: 'COMP003',
           storeId: 'STORE005',
-          name: 'オーケー川崎店',
-          address: '神奈川県川崎市川崎区駅前本町1-1',
-          phone: '044-555-6666',
+          name: 'イオン幕張新都心店',
+          address: '千葉県千葉市美浜区豊砂1-1',
+          phone: '043-351-8000',
+          status: 'active'
+        },
+        {
+          id: 6,
+          companyId: 'COMP003',
+          storeId: 'STORE006',
+          name: 'イオンレイクタウン店',
+          address: '埼玉県越谷市レイクタウン3-1-1',
+          phone: '048-990-3100',
+          status: 'active'
+        },
+        {
+          id: 7,
+          companyId: 'COMP004',
+          storeId: 'STORE007',
+          name: 'サミット高田馬場店',
+          address: '東京都新宿区高田馬場3-35-1',
+          phone: '03-3360-4545',
+          status: 'active'
+        },
+        {
+          id: 8,
+          companyId: 'COMP004',
+          storeId: 'STORE008',
+          name: 'サミット中野店',
+          address: '東京都中野区中野2-30-9',
+          phone: '03-3389-0123',
+          status: 'inactive'
+        },
+        {
+          id: 9,
+          companyId: 'COMP005',
+          storeId: 'STORE009',
+          name: 'ヨークベニマル郡山店',
+          address: '福島県郡山市中町12-2',
+          phone: '024-932-0111',
+          status: 'active'
+        },
+        {
+          id: 10,
+          companyId: 'COMP005',
+          storeId: 'STORE010',
+          name: 'ヨークベニマル仙台店',
+          address: '宮城県仙台市青葉区中央3-6-1',
+          phone: '022-268-3456',
+          status: 'active'
+        },
+        {
+          id: 11,
+          companyId: 'COMP006',
+          storeId: 'STORE011',
+          name: '西友池袋店',
+          address: '東京都豊島区南池袋1-28-1',
+          phone: '03-5949-0111',
+          status: 'active'
+        },
+        {
+          id: 12,
+          companyId: 'COMP006',
+          storeId: 'STORE012',
+          name: '西友西新井店',
+          address: '東京都足立区西新井栄町1-17-1',
+          phone: '03-3854-8888',
+          status: 'active'
+        },
+        {
+          id: 13,
+          companyId: 'COMP007',
+          storeId: 'STORE013',
+          name: 'イトーヨーカ堂木場店',
+          address: '東京都江東区木場2-18-11',
+          phone: '03-5665-1111',
+          status: 'active'
+        },
+        {
+          id: 14,
+          companyId: 'COMP008',
+          storeId: 'STORE014',
+          name: 'ベルク所沢店',
+          address: '埼玉県所沢市日吉町11-16',
+          phone: '04-2923-5151',
+          status: 'active'
+        },
+        {
+          id: 15,
+          companyId: 'COMP009',
+          storeId: 'STORE015',
+          name: 'オーケー横浜西口店',
+          address: '神奈川県横浜市西区南幸2-1-22',
+          phone: '045-314-0123',
+          status: 'inactive'
+        },
+        {
+          id: 16,
+          companyId: 'COMP010',
+          storeId: 'STORE016',
+          name: 'バロー多治見店',
+          address: '岐阜県多治見市住吉町2-50',
+          phone: '0572-24-3333',
+          status: 'active'
+        },
+        {
+          id: 17,
+          companyId: 'COMP011',
+          storeId: 'STORE017',
+          name: 'アークス札幌駅前店',
+          address: '北海道札幌市中央区北4条西4-1',
+          phone: '011-209-5100',
+          status: 'active'
+        },
+        {
+          id: 18,
+          companyId: 'COMP012',
+          storeId: 'STORE018',
+          name: '万代天王寺店',
+          address: '大阪府大阪市天王寺区堀越町17-1',
+          phone: '06-6772-8888',
+          status: 'active'
+        },
+        {
+          id: 19,
+          companyId: 'COMP013',
+          storeId: 'STORE019',
+          name: '平和堂彦根店',
+          address: '滋賀県彦根市古沢町255-1',
+          phone: '0749-26-1111',
+          status: 'active'
+        },
+        {
+          id: 20,
+          companyId: 'COMP014',
+          storeId: 'STORE020',
+          name: 'フジグラン松山店',
+          address: '愛媛県松山市宮西1-2-1',
+          phone: '089-943-9111',
           status: 'active'
         }
       ]
+      this.allStores = [...this.stores]
     }
   },
   mounted() {
@@ -366,7 +710,15 @@ export default {
       return
     }
 
+    // 権限チェック（システム管理者または企業管理者のみ）
+    if (!this.adminStore.isSystemAdmin && !this.adminStore.isCompanyAdmin) {
+      alert('この機能はシステム管理者または企業管理者のみ利用可能です')
+      this.$router.push('/admin')
+      return
+    }
+
     this.loadStores()
+    this.loadAllStores()
   }
 }
 </script>
@@ -481,6 +833,25 @@ export default {
 
 .search-input:focus {
   border-color: var(--primary-color);
+}
+
+.btn-search {
+  padding: 12px 24px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-search:hover {
+  background-color: #5a67d8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .btn-create {
@@ -636,6 +1007,12 @@ export default {
 /* テーブル */
 .table-container {
   overflow-x: auto;
+  cursor: grab;
+  user-select: none;
+}
+
+.table-container:active {
+  cursor: grabbing;
 }
 
 .stores-table {
@@ -752,6 +1129,49 @@ export default {
 .btn-icon:hover {
   background-color: var(--bg-light);
   transform: scale(1.1);
+}
+
+/* ページネーション */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid var(--border-color);
+}
+
+.pagination-btn {
+  min-width: 40px;
+  height: 40px;
+  padding: 8px 12px;
+  background-color: white;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.pagination-btn.active {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
