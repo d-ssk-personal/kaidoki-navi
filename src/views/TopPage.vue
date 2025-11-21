@@ -18,9 +18,14 @@
           </div>
           <div class="notification-content">
             <h3 class="notification-title">{{ truncateText(notification.title, 40) }}</h3>
-            <p class="notification-body">{{ truncateText(notification.content, 80) }}</p>
+            <p class="notification-body">{{ truncateText(notification.content, 100) }}</p>
           </div>
         </div>
+      </div>
+      <div class="notification-more">
+        <a href="#" class="notification-more-link" @click.prevent="goToNotifications">
+          もっと見る &gt;
+        </a>
       </div>
     </section>
 
@@ -444,8 +449,12 @@ export default {
   methods: {
     // お知らせ関連のメソッド
     loadNotifications() {
-      this.latestNotifications = getLatestNotifications(3)
+      this.latestNotifications = getLatestNotifications(2)
       this.notificationsByMonth = getNotificationsByMonth()
+    },
+    goToNotifications() {
+      // TODO: お知らせ一覧ページへの遷移を実装
+      console.log('Navigate to notifications page')
     },
     formatDate(dateString) {
       const date = new Date(dateString)
@@ -717,11 +726,30 @@ export default {
   font-size: 14px;
   color: var(--text-secondary);
   line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notification-more {
+  margin-top: 16px;
+  text-align: right;
+}
+
+.notification-more-link {
+  display: inline-block;
+  color: var(--primary-color);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.notification-more-link:hover {
+  background-color: rgba(102, 126, 234, 0.1);
+  transform: translateX(4px);
 }
 
 /* サイドバー */
