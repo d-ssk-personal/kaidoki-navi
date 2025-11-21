@@ -4,6 +4,26 @@
     <div class="main-container">
       <!-- メインコンテンツ -->
       <main class="main-content">
+    <!-- お知らせセクション -->
+    <section class="notification-section">
+      <h2 class="notification-section-title">お知らせ</h2>
+      <div class="notification-list">
+        <div
+          v-for="notification in latestNotifications"
+          :key="notification.id"
+          class="notification-item"
+        >
+          <div class="notification-date">
+            {{ formatDate(notification.publishedAt) }}
+          </div>
+          <div class="notification-content">
+            <h3 class="notification-title">{{ truncateText(notification.title, 40) }}</h3>
+            <p class="notification-body">{{ truncateText(notification.content, 80) }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- チラシ検索セクション -->
     <section class="flyer-section">
       <!-- チラシ検索フォーム -->
@@ -159,6 +179,63 @@
             </button>
           </div>
         </div>
+
+        <!-- お知らせ検索 -->
+        <div class="notification-search">
+          <h3 class="notification-search-title">お知らせを検索</h3>
+          <div class="notification-search-box">
+            <input
+              type="text"
+              v-model="notificationSearchQuery"
+              placeholder="キーワードで検索"
+              class="notification-search-input"
+              @keyup.enter="performNotificationSearch"
+            />
+            <button class="notification-search-button" @click="performNotificationSearch">
+              🔍
+            </button>
+          </div>
+
+          <!-- 年月ごとのアコーディオン -->
+          <div class="notification-archive">
+            <h4 class="notification-archive-title">過去のお知らせ</h4>
+            <div class="notification-accordion">
+              <div
+                v-for="group in notificationsByMonth"
+                :key="group.yearMonth"
+                class="accordion-item"
+              >
+                <button
+                  class="accordion-header"
+                  @click="toggleAccordion(group.yearMonth)"
+                  :class="{ active: openAccordions.includes(group.yearMonth) }"
+                >
+                  <span>{{ group.yearMonth }}</span>
+                  <span class="accordion-icon">
+                    {{ openAccordions.includes(group.yearMonth) ? '▼' : '▶' }}
+                  </span>
+                </button>
+                <div
+                  class="accordion-content"
+                  :class="{ open: openAccordions.includes(group.yearMonth) }"
+                >
+                  <div
+                    v-for="notification in group.notifications"
+                    :key="notification.id"
+                    class="accordion-notification-item"
+                  >
+                    <span class="accordion-notification-date">
+                      {{ formatShortDate(notification.publishedAt) }}
+                    </span>
+                    <span class="accordion-notification-title">
+                      {{ notification.title }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </aside>
     </div>
 
@@ -190,6 +267,7 @@ import ArticleList from '@/components/ArticleList.vue'
 import FlyerModal from '@/components/FlyerModal.vue'
 import api from '@/services/api'
 import { useMainStore } from '@/store'
+import { getLatestNotifications, getNotificationsByMonth, searchNotifications } from '@/data/notifications'
 
 export default {
   name: 'TopPage',
@@ -202,6 +280,11 @@ export default {
       products: [],
       loading: true,
       error: null,
+      // お知らせ関連
+      latestNotifications: [],
+      notificationsByMonth: [],
+      notificationSearchQuery: '',
+      openAccordions: [],
       // コラム検索関連
       articleSearchQuery: '',
       articleCategories: [
@@ -356,8 +439,45 @@ export default {
   },
   async mounted() {
     await this.loadProducts()
+    this.loadNotifications()
   },
   methods: {
+    // お知らせ関連のメソッド
+    loadNotifications() {
+      this.latestNotifications = getLatestNotifications(3)
+      this.notificationsByMonth = getNotificationsByMonth()
+    },
+    formatDate(dateString) {
+      const date = new Date(dateString)
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}.${month}.${day}`
+    },
+    formatShortDate(dateString) {
+      const date = new Date(dateString)
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${month}/${day}`
+    },
+    truncateText(text, maxLength) {
+      if (text.length <= maxLength) {
+        return text
+      }
+      return text.substring(0, maxLength) + '...'
+    },
+    performNotificationSearch() {
+      console.log('Notification search:', this.notificationSearchQuery)
+      // TODO: お知らせ検索結果ページへの遷移を実装
+    },
+    toggleAccordion(yearMonth) {
+      const index = this.openAccordions.indexOf(yearMonth)
+      if (index > -1) {
+        this.openAccordions.splice(index, 1)
+      } else {
+        this.openAccordions.push(yearMonth)
+      }
+    },
     async loadProducts() {
       try {
         this.loading = true
@@ -530,6 +650,80 @@ export default {
   align-items: flex-start;
 }
 
+/* お知らせセクション */
+.notification-section {
+  margin-bottom: 40px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.notification-section-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--primary-color);
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.notification-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background-color: white;
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-color);
+  transition: all 0.3s ease;
+}
+
+.notification-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateX(4px);
+}
+
+.notification-date {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-color);
+  padding-top: 2px;
+  min-width: 80px;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notification-body {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* サイドバー */
 .sidebar {
   width: 280px;
@@ -635,6 +829,161 @@ export default {
   border-color: var(--primary-color);
   color: var(--primary-color);
   transform: translateX(4px);
+}
+
+/* お知らせ検索 */
+.notification-search {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 2px solid var(--border-color);
+}
+
+.notification-search-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  padding-left: 8px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.notification-search-box {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.notification-search-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.notification-search-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.notification-search-button {
+  width: 44px;
+  height: 44px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.notification-search-button:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+/* お知らせアーカイブ */
+.notification-archive {
+  margin-top: 20px;
+}
+
+.notification-archive-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  padding-left: 8px;
+}
+
+.notification-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accordion-item {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: white;
+}
+
+.accordion-header {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: white;
+  border: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.accordion-header:hover {
+  background-color: var(--bg-light);
+}
+
+.accordion-header.active {
+  background-color: var(--bg-light);
+  color: var(--primary-color);
+}
+
+.accordion-icon {
+  font-size: 12px;
+  transition: transform 0.3s ease;
+  color: var(--primary-color);
+}
+
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  background-color: #fafafa;
+}
+
+.accordion-content.open {
+  max-height: 500px;
+}
+
+.accordion-notification-item {
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.accordion-notification-item:hover {
+  background-color: white;
+  padding-left: 20px;
+}
+
+.accordion-notification-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.accordion-notification-title {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* メインコンテンツ */
