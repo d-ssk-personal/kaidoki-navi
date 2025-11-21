@@ -84,7 +84,8 @@ test@example.com | 002    | 佐藤花子
 5. [Flyers](#5-flyers---チラシ)
 6. [Articles](#6-articles---コラム)
 7. [FavoriteStores](#7-favoritstores---お気に入り店舗)
-8. [Recipes](#8-recipes---aiレシピ)
+8. [Recipes](#8-recipes---aiレシピキャッシュ)
+9. [SharedRecipes](#9-sharedrecipes---共有レシピ)
 
 ---
 
@@ -745,13 +746,13 @@ table.delete_item(
 
 ---
 
-## 8. Recipes - AIレシピ
+## 8. Recipes - AIレシピ（キャッシュ）
 
 ### テーブル名
 `recipes`
 
 ### 説明
-AIが生成したレシピを保存
+AIが生成したレシピを一時的にキャッシュ（共有されていないレシピは30日後に自動削除）
 
 ### キー設計
 
@@ -821,6 +822,126 @@ ttl = int(time.time()) + (30 * 24 * 60 * 60)
 ### 備考
 - TTL（Time To Live）を設定し、30日後に自動削除
 - 同じチラシに対して再度レシピ生成を依頼された場合、キャッシュから返却
+- **このテーブルは一時キャッシュ専用**。SNS共有されたレシピは `SharedRecipes` テーブルに永続化される
+
+---
+
+## 9. SharedRecipes - 共有レシピ
+
+### テーブル名
+`shared-recipes`
+
+### 説明
+SNS共有されたレシピを永続的に保存（TTLなし）
+
+### キー設計
+
+| 属性名 | 型 | キー種別 | 説明 |
+|--------|-----|----------|------|
+| sharedRecipeId | String | PK (Partition Key) | 共有レシピID（UUID） |
+
+### GSI（Global Secondary Index）
+
+#### GSI-1: FlyerIndex
+- **Purpose**: 同じチラシから生成された共有レシピを検索
+- **PK**: flyerId (String)
+- **SK**: sharedAt (String)
+- **Projection**: ALL
+
+**なぜ必要？**
+同じチラシから複数のレシピが生成・共有される可能性があります。チラシページで「このチラシから共有されたレシピ一覧」を表示する際に使用します。
+
+**使用例:**
+```python
+# ✅ チラシ「flyer_001」から共有されたレシピ一覧を取得
+response = table.query(
+    IndexName='FlyerIndex',
+    KeyConditionExpression='flyerId = :flyerId',
+    ExpressionAttributeValues={':flyerId': 'flyer_001'},
+    ScanIndexForward=False  # 新しい順
+)
+```
+
+**結論**: チラシページで「このチラシから生成された人気レシピ」を表示する機能に使用します。
+
+### 属性
+
+| 属性名 | 型 | 必須 | 説明 | 例 |
+|--------|-----|------|------|-----|
+| sharedRecipeId | String | ○ | 共有レシピID（UUID） | `shared_recipe_abc123` |
+| flyerId | String | ○ | 元となったチラシID | `flyer_001` |
+| recipeText | String | ○ | レシピ本文（Markdown） | `# おすすめレシピ\n\n## 豚バラ肉と...` |
+| ingredients | List<Map> |  | 食材リスト | `[{"name": "豚バラ肉", "price": 298}]` |
+| storeInfo | Map | ○ | 店舗情報のスナップショット | 以下参照 |
+| imageUrl | String |  | レシピ画像URL（OGP用） | `https://s3.../shared-recipes/abc123.jpg` |
+| sharedAt | String | ○ | 共有日時 | `2024-01-15T12:34:56Z` |
+| sharedByUserId | String |  | 共有したユーザーID（任意） | `user_a1b2c3d4` |
+| viewCount | Number | ○ | 閲覧数 | `152` |
+| createdAt | String | ○ | 作成日時 | `2024-01-15T12:34:56Z` |
+| updatedAt | String | ○ | 更新日時 | `2024-01-20T10:00:00Z` |
+
+#### storeInfo の構造
+```json
+{
+  "storeId": "store_001",
+  "storeName": "スーパーA 新宿店",
+  "storeLogo": "https://example.com/logos/store_001.png",
+  "storeAddress": "東京都新宿区新宿1-1-1",
+  "flyerValidFrom": "2024-01-15",
+  "flyerValidUntil": "2024-01-21"
+}
+```
+
+### アクセスパターン
+1. 共有レシピIDで取得（PK） - SNS共有URLからのアクセス
+2. チラシIDで共有レシピ一覧取得（GSI-1） - チラシページからの関連レシピ表示
+3. 閲覧数の更新（PK + UpdateItem）
+
+### 共有レシピの作成フロー
+
+```python
+# 1. ユーザーが「共有」ボタンをクリック
+# 2. Recipesテーブルからレシピを取得
+recipe = table.get_item(Key={'flyerId': 'flyer_001'})
+
+# 3. Storesテーブルから店舗情報を取得（スナップショット用）
+store = get_store_info(store_id)
+
+# 4. SharedRecipesテーブルに新規作成
+shared_recipe_id = str(uuid.uuid4())
+table.put_item(
+    Item={
+        'sharedRecipeId': shared_recipe_id,
+        'flyerId': recipe['flyerId'],
+        'recipeText': recipe['recipeText'],
+        'ingredients': recipe['ingredients'],
+        'storeInfo': {
+            'storeId': store['storeId'],
+            'storeName': store['name'],
+            'storeLogo': store['logo'],
+            'storeAddress': store['address'],
+            'flyerValidFrom': flyer['validFrom'],
+            'flyerValidUntil': flyer['validUntil']
+        },
+        'sharedAt': datetime.now().isoformat(),
+        'sharedByUserId': current_user_id or None,
+        'viewCount': 0,
+        'createdAt': datetime.now().isoformat(),
+        'updatedAt': datetime.now().isoformat()
+    }
+)
+
+# 5. 共有URLを生成
+share_url = f"https://chirashi-kitchen.com/shared-recipe/{shared_recipe_id}"
+return share_url
+```
+
+### 備考
+- **TTLなし**: 共有レシピは永続的に保存される
+- **店舗情報のスナップショット**: チラシや店舗が削除されても、共有レシピは文脈を保持
+- **ログイン不要でアクセス可能**: SNS経由のユーザーも閲覧できる
+- **OGP対応**: `imageUrl` を使ってSNSでリッチプレビューを表示
+- **閲覧数トラッキング**: 人気レシピのランキング表示などに活用可能
 
 ---
 
