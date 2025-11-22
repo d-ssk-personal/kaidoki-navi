@@ -211,6 +211,7 @@
 
 <script>
 import { useAdminStore } from '@/store/admin'
+import api from '@/services/api'
 
 export default {
   name: 'AccountForm',
@@ -265,12 +266,18 @@ export default {
       this.errorMessage = ''
 
       try {
-        // 実際はAPIでデータを送信
-        await new Promise(resolve => setTimeout(resolve, 500))
+        const accountData = {
+          accountId: this.form.accountId,
+          password: this.form.password,
+          companyId: this.form.companyId,
+          storeId: this.form.storeId
+        }
 
         if (this.isEditMode) {
+          await api.admin.updateAccount(this.$route.params.id, accountData)
           alert('アカウント情報を更新しました')
         } else {
+          await api.admin.createAccount(accountData)
           alert('アカウントを登録しました')
         }
         this.$router.push('/admin/accounts')
@@ -282,25 +289,33 @@ export default {
         this.showConfirmModal = false
       }
     },
-    loadAccount() {
+    async loadAccount() {
       if (this.isEditMode) {
-        // 実際はAPIからアカウントデータを取得
-        // ダミーデータ
-        const dummyAccount = {
-          id: this.$route.params.id,
-          companyId: 'COMP001',
-          companyName: '株式会社マルエツ',
-          storeId: 'STORE001',
-          storeName: 'マルエツ赤坂店',
-          accountId: 'store_user_001',
-          password: ''
-        }
+        this.loading = true
+        try {
+          const response = await api.admin.getAccounts({ id: this.$route.params.id })
+          const account = response.accounts && response.accounts.length > 0 ? response.accounts[0] : null
 
-        this.form.companyId = dummyAccount.companyId
-        this.form.companyName = dummyAccount.companyName
-        this.form.storeId = dummyAccount.storeId
-        this.form.storeName = dummyAccount.storeName
-        this.form.accountId = dummyAccount.accountId
+          if (account) {
+            this.form.companyId = account.companyId
+            this.form.companyName = account.companyName
+            this.form.storeId = account.storeId
+            this.form.storeName = account.storeName
+            this.form.accountId = account.accountId
+            // パスワードは空にしておく
+            this.form.password = ''
+            this.form.passwordConfirm = ''
+          } else {
+            alert('アカウントが見つかりませんでした')
+            this.$router.push('/admin/accounts')
+          }
+        } catch (error) {
+          console.error('Load account error:', error)
+          alert('アカウントデータの取得に失敗しました')
+          this.$router.push('/admin/accounts')
+        } finally {
+          this.loading = false
+        }
       } else {
         // 新規作成時はログインユーザーの情報を取得
         if (this.adminStore.isSystemAdmin) {

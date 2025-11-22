@@ -213,6 +213,7 @@
 <script>
 import { useAuthStore } from '@/store/auth'
 import FlyerModal from '@/components/FlyerModal.vue'
+import api from '@/services/api'
 
 export default {
   name: 'MyPage',
@@ -263,48 +264,8 @@ export default {
       saveMessage: '',
       saveMessageClass: '',
 
-      // ダミー店舗データ（本来はAPIから取得）
-      allStores: [
-        {
-          id: 1,
-          name: 'イオン大宮店',
-          storeName: 'イオン大宮店',
-          postalCode: '〒330-0846',
-          address: '埼玉県さいたま市大宮区大門町2-90',
-          phone: '048-645-7700',
-          salePeriod: '2025/11/19 - 2025/11/25',
-          flyerImages: [
-            'https://placehold.jp/400x600.png?text=Flyer+1',
-            'https://placehold.jp/400x600.png?text=Flyer+2'
-          ]
-        },
-        {
-          id: 2,
-          name: '西友浦和店',
-          storeName: '西友浦和店',
-          postalCode: '〒330-0062',
-          address: '埼玉県さいたま市浦和区仲町1-7-1',
-          phone: '048-822-1111',
-          salePeriod: '2025/11/20 - 2025/11/26',
-          flyerImages: [
-            'https://placehold.jp/400x600.png?text=Seiyu+1'
-          ]
-        },
-        {
-          id: 3,
-          name: 'ヨークマート川口店',
-          storeName: 'ヨークマート川口店',
-          postalCode: '〒332-0012',
-          address: '埼玉県川口市本町4-4-16',
-          phone: '048-224-5678',
-          salePeriod: '2025/11/18 - 2025/11/24',
-          flyerImages: [
-            'https://placehold.jp/400x600.png?text=York+1',
-            'https://placehold.jp/400x600.png?text=York+2',
-            'https://placehold.jp/400x600.png?text=York+3'
-          ]
-        }
-      ]
+      // お気に入り店舗データ（APIから取得）
+      allStores: []
     }
   },
   setup() {
@@ -319,13 +280,40 @@ export default {
       )
     }
   },
-  mounted() {
+  async mounted() {
     // 未ログインの場合はログインページにリダイレクト
     if (!this.authStore.isLoggedIn) {
       this.$router.push('/login')
+      return
     }
+
+    await this.loadFavoriteStores()
+    await this.loadNotificationSettings()
   },
   methods: {
+    async loadFavoriteStores() {
+      try {
+        const data = await api.getFavoriteStores()
+        this.allStores = data
+      } catch (err) {
+        console.error('お気に入り店舗の取得に失敗しました:', err)
+        this.allStores = []
+      }
+    },
+
+    async loadNotificationSettings() {
+      try {
+        const data = await api.getNotificationSettings()
+        if (data) {
+          this.storeNotifications = data.storeNotifications || {}
+          this.selectedFrequency = data.frequency || 'realtime'
+          this.webPushEnabled = data.webPushEnabled || false
+        }
+      } catch (err) {
+        console.error('通知設定の取得に失敗しました:', err)
+      }
+    },
+
     openStoreFlyer(store) {
       this.selectedStore = store
       this.activeTab = 'flyer'
@@ -404,8 +392,7 @@ export default {
           webPushEnabled: this.webPushEnabled
         }
 
-        // 本来はここでAPIに保存
-        console.log('Saving notification settings:', settings)
+        await api.updateNotificationSettings(settings)
 
         this.saveMessage = '設定を保存しました'
         this.saveMessageClass = 'success'
@@ -458,56 +445,21 @@ export default {
       this.currentRecipeIndex = index
     },
 
-    generateRecipes() {
-      this.isLoadingRecipe = true
-      this.activeTab = 'recipe'
+    async generateRecipes() {
+      if (!this.selectedStore?.id) return
 
-      // ダミーレシピ生成（2秒後）
-      setTimeout(() => {
-        this.recipes = [
-          {
-            id: 1,
-            title: '鶏肉の照り焼き',
-            image: 'https://placehold.jp/600x400.png?text=Recipe+1',
-            ingredients: [
-              '鶏もも肉 300g',
-              '醤油 大さじ2',
-              'みりん 大さじ2',
-              '砂糖 大さじ1',
-              '生姜 1片'
-            ],
-            instructions: '1. 鶏肉を一口大に切ります。\n2. フライパンで鶏肉を焼きます。\n3. 調味料を加えて煮詰めます。\n4. 照りが出たら完成です。'
-          },
-          {
-            id: 2,
-            title: '野菜炒め',
-            image: 'https://placehold.jp/600x400.png?text=Recipe+2',
-            ingredients: [
-              'キャベツ 1/4個',
-              '人参 1/2本',
-              'ピーマン 2個',
-              '豚肉 150g',
-              '塩コショウ 適量'
-            ],
-            instructions: '1. 野菜を食べやすい大きさに切ります。\n2. 豚肉を炒めます。\n3. 野菜を加えて炒めます。\n4. 塩コショウで味を整えたら完成です。'
-          },
-          {
-            id: 3,
-            title: '味噌汁',
-            image: 'https://placehold.jp/600x400.png?text=Recipe+3',
-            ingredients: [
-              '豆腐 1/2丁',
-              'わかめ 適量',
-              '味噌 大さじ2',
-              '出汁 400ml',
-              'ネギ 適量'
-            ],
-            instructions: '1. 出汁を温めます。\n2. 豆腐とわかめを加えます。\n3. 味噌を溶かし入れます。\n4. ネギを散らして完成です。'
-          }
-        ]
-        this.isLoadingRecipe = false
+      try {
+        this.isLoadingRecipe = true
+        this.activeTab = 'recipe'
+        const data = await api.generateRecipe(this.selectedStore.id)
+        this.recipes = data.recipes || []
         this.currentRecipeIndex = 0
-      }, 2000)
+      } catch (err) {
+        console.error('レシピ生成に失敗しました:', err)
+        this.recipes = []
+      } finally {
+        this.isLoadingRecipe = false
+      }
     },
 
     shareSNS(platform) {

@@ -228,6 +228,7 @@
 
 <script>
 import { useAdminStore } from '@/store/admin'
+import api from '@/services/api'
 
 export default {
   name: 'CompanyManagement',
@@ -409,24 +410,36 @@ export default {
         this.selectedIds = this.filteredCompanies.map(company => company.id)
       }
     },
-    bulkActivate() {
+    async bulkActivate() {
       if (confirm(`選択した${this.selectedIds.length}件の企業を有効化しますか？`)) {
-        this.selectedIds.forEach(id => {
-          const company = this.companies.find(c => c.id === id)
-          if (company) company.contractStatus = 'active'
-        })
-        alert('企業を有効化しました')
-        this.selectedIds = []
+        try {
+          await api.admin.bulkUpdateCompanyStatus(this.selectedIds, 'active')
+          this.selectedIds.forEach(id => {
+            const company = this.companies.find(c => c.id === id)
+            if (company) company.contractStatus = 'active'
+          })
+          alert('企業を有効化しました')
+          this.selectedIds = []
+        } catch (error) {
+          console.error('Bulk activate error:', error)
+          alert('企業の有効化に失敗しました')
+        }
       }
     },
-    bulkSuspend() {
+    async bulkSuspend() {
       if (confirm(`選択した${this.selectedIds.length}件の企業を停止しますか？`)) {
-        this.selectedIds.forEach(id => {
-          const company = this.companies.find(c => c.id === id)
-          if (company) company.contractStatus = 'suspended'
-        })
-        alert('企業を停止しました')
-        this.selectedIds = []
+        try {
+          await api.admin.bulkUpdateCompanyStatus(this.selectedIds, 'suspended')
+          this.selectedIds.forEach(id => {
+            const company = this.companies.find(c => c.id === id)
+            if (company) company.contractStatus = 'suspended'
+          })
+          alert('企業を停止しました')
+          this.selectedIds = []
+        } catch (error) {
+          console.error('Bulk suspend error:', error)
+          alert('企業の停止に失敗しました')
+        }
       }
     },
     handleLogout() {
@@ -435,8 +448,25 @@ export default {
         this.$router.push('/admin/login')
       }
     },
-    loadCompanies() {
-      // ダミーデータ（実際はAPIから取得）
+    async loadCompanies() {
+      this.loading = true
+      try {
+        const params = {}
+        const response = await api.admin.getCompanies(params)
+        this.companies = response.companies || []
+        this.allCompanies = [...this.companies]
+        this.loadAllCompanies()
+      } catch (error) {
+        console.error('Load companies error:', error)
+        alert('企業一覧の取得に失敗しました')
+        this.companies = []
+        this.allCompanies = []
+      } finally {
+        this.loading = false
+      }
+    },
+    loadCompaniesDummy() {
+      // 削除: ダミーデータ
       this.companies = [
         {
           id: 1,

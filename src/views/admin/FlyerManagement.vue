@@ -285,6 +285,7 @@
 
 <script>
 import { useAdminStore } from '@/store/admin'
+import api from '@/services/api'
 
 export default {
   name: 'FlyerManagement',
@@ -315,7 +316,9 @@ export default {
       searchTriggered: false,
       filteredFlyers: [],
       allFlyers: [],
-      flyers: [
+      loading: false,
+      flyers: [],
+      flyersDummy: [
         {
           id: 1,
           companyId: 'COMP001',
@@ -629,10 +632,23 @@ export default {
     this.loadAllFlyers()
   },
   methods: {
-    loadAllFlyers() {
-      // 全チラシを読み込んで初期表示
-      this.allFlyers = [...this.flyers]
-      this.filteredFlyers = [...this.flyers]
+    async loadAllFlyers() {
+      this.loading = true
+      try {
+        const params = {}
+        const response = await api.admin.getFlyers(params)
+        this.flyers = response.flyers || []
+        this.allFlyers = [...this.flyers]
+        this.filteredFlyers = [...this.flyers]
+      } catch (error) {
+        console.error('Load flyers error:', error)
+        alert('チラシ一覧の取得に失敗しました')
+        this.flyers = []
+        this.allFlyers = []
+        this.filteredFlyers = []
+      } finally {
+        this.loading = false
+      }
     },
     search() {
       // ベースとなるデータセット
@@ -788,36 +804,62 @@ export default {
         this.selectedIds = this.filteredFlyers.map(f => f.id)
       }
     },
-    bulkChangeStatus() {
+    async bulkChangeStatus() {
       if (!this.bulkStatusChange) {
         alert('ステータスを選択してください')
         return
       }
       if (confirm(`選択した${this.selectedIds.length}件のチラシのステータスを「${this.getStatusLabel(this.bulkStatusChange)}」に変更しますか？`)) {
-        this.selectedIds.forEach(id => {
-          const flyer = this.flyers.find(f => f.id === id)
-          if (flyer) flyer.status = this.bulkStatusChange
-        })
-        alert('ステータスを変更しました')
-        this.selectedIds = []
-        this.bulkStatusChange = ''
+        try {
+          for (const id of this.selectedIds) {
+            const flyer = this.flyers.find(f => f.id === id)
+            if (flyer) {
+              await api.admin.updateFlyer(id, { ...flyer, status: this.bulkStatusChange })
+              flyer.status = this.bulkStatusChange
+            }
+          }
+          alert('ステータスを変更しました')
+          this.selectedIds = []
+          this.bulkStatusChange = ''
+        } catch (error) {
+          console.error('Bulk change status error:', error)
+          alert('ステータスの変更に失敗しました')
+        }
       }
     },
-    bulkDelete() {
+    async bulkDelete() {
       if (confirm(`選択した${this.selectedIds.length}件のチラシを削除しますか？`)) {
-        this.flyers = this.flyers.filter(f => !this.selectedIds.includes(f.id))
-        alert('チラシを削除しました')
-        this.selectedIds = []
+        try {
+          for (const id of this.selectedIds) {
+            await api.admin.deleteFlyer(id)
+          }
+          this.flyers = this.flyers.filter(f => !this.selectedIds.includes(f.id))
+          this.allFlyers = [...this.flyers]
+          this.filteredFlyers = this.filteredFlyers.filter(f => !this.selectedIds.includes(f.id))
+          alert('チラシを削除しました')
+          this.selectedIds = []
+        } catch (error) {
+          console.error('Bulk delete error:', error)
+          alert('チラシの削除に失敗しました')
+        }
       }
     },
-    deleteFlyer(id) {
+    async deleteFlyer(id) {
       if (confirm('このチラシを削除しますか？')) {
-        this.flyers = this.flyers.filter(f => f.id !== id)
-        alert('チラシを削除しました')
-        // 選択リストからも削除
-        const index = this.selectedIds.indexOf(id)
-        if (index !== -1) {
-          this.selectedIds.splice(index, 1)
+        try {
+          await api.admin.deleteFlyer(id)
+          this.flyers = this.flyers.filter(f => f.id !== id)
+          this.allFlyers = [...this.flyers]
+          this.filteredFlyers = this.filteredFlyers.filter(f => f.id !== id)
+          alert('チラシを削除しました')
+          // 選択リストからも削除
+          const index = this.selectedIds.indexOf(id)
+          if (index !== -1) {
+            this.selectedIds.splice(index, 1)
+          }
+        } catch (error) {
+          console.error('Delete flyer error:', error)
+          alert('チラシの削除に失敗しました')
         }
       }
     },

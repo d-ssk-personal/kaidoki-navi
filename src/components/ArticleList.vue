@@ -57,7 +57,7 @@
 
 <script>
 import ArticleCard from './ArticleCard.vue'
-import { getLatestArticles, searchArticles } from '@/data/articles'
+import api from '@/services/api'
 
 export default {
   name: 'ArticleList',
@@ -75,7 +75,8 @@ export default {
       searchQuery: '',
       isSearching: false,
       allArticles: [],
-      searchResults: []
+      searchResults: [],
+      loading: false
     }
   },
   computed: {
@@ -90,13 +91,33 @@ export default {
     this.loadArticles()
   },
   methods: {
-    loadArticles() {
-      this.allArticles = getLatestArticles(this.limit)
+    async loadArticles() {
+      try {
+        this.loading = true
+        const response = await api.getLatestArticles(this.limit)
+        this.allArticles = response.items
+      } catch (error) {
+        console.error('記事の取得に失敗しました:', error)
+        this.allArticles = []
+      } finally {
+        this.loading = false
+      }
     },
-    performSearch() {
+    async performSearch() {
       if (this.searchQuery.trim()) {
-        this.isSearching = true
-        this.searchResults = searchArticles(this.searchQuery.trim())
+        try {
+          this.loading = true
+          this.isSearching = true
+          const response = await api.getArticles({
+            search: this.searchQuery.trim()
+          })
+          this.searchResults = response.items
+        } catch (error) {
+          console.error('記事の検索に失敗しました:', error)
+          this.searchResults = []
+        } finally {
+          this.loading = false
+        }
       } else {
         this.clearSearch()
       }

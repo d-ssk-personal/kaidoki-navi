@@ -1,98 +1,114 @@
 import { defineStore } from 'pinia'
-import { articles as initialArticles } from '@/data/articles'
+import api from '@/services/api'
 
 export const useArticlesStore = defineStore('articles', {
   state: () => ({
-    articles: [...initialArticles]
+    articles: [],
+    currentArticle: null,
+    pagination: {
+      currentPage: 1,
+      totalPages: 0,
+      totalItems: 0,
+      limit: 20
+    }
   }),
 
   getters: {
     getAllArticles: (state) => state.articles,
-
     getArticleById: (state) => (id) => {
       return state.articles.find(article => article.id === parseInt(id))
-    },
-
-    searchArticles: (state) => (query, category, tag, status) => {
-      let results = [...state.articles]
-
-      // カテゴリフィルター
-      if (category) {
-        results = results.filter(article => article.category === category)
-      }
-
-      // タグフィルター
-      if (tag) {
-        results = results.filter(article =>
-          article.tags && article.tags.includes(tag)
-        )
-      }
-
-      // ステータスフィルター
-      if (status) {
-        results = results.filter(article => article.status === status)
-      }
-
-      // キーワード検索
-      if (query && query.trim()) {
-        const lowerQuery = query.toLowerCase()
-        results = results.filter(article =>
-          article.title.toLowerCase().includes(lowerQuery) ||
-          article.content.toLowerCase().includes(lowerQuery)
-        )
-      }
-
-      return results.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
     }
   },
 
   actions: {
-    addArticle(article) {
-      const newId = Math.max(...this.articles.map(a => a.id), 0) + 1
-      const newArticle = {
-        ...article,
-        id: newId,
-        publishedAt: new Date().toISOString()
+    async fetchArticles(params = {}) {
+      try {
+        const response = await api.admin.getArticles(params)
+        this.articles = response.items
+        this.pagination = response.pagination
+        return response
+      } catch (error) {
+        console.error('記事の取得に失敗しました:', error)
+        throw error
       }
-      this.articles.push(newArticle)
-      return newArticle
     },
 
-    updateArticle(id, updatedData) {
-      const index = this.articles.findIndex(article => article.id === parseInt(id))
-      if (index !== -1) {
-        this.articles[index] = {
-          ...this.articles[index],
-          ...updatedData
+    async fetchArticleById(id) {
+      try {
+        const article = await api.admin.getArticleById(id)
+        this.currentArticle = article
+        return article
+      } catch (error) {
+        console.error('記事詳細の取得に失敗しました:', error)
+        throw error
+      }
+    },
+
+    async addArticle(article) {
+      try {
+        const newArticle = await api.admin.createArticle(article)
+        this.articles.unshift(newArticle)
+        return newArticle
+      } catch (error) {
+        console.error('記事の追加に失敗しました:', error)
+        throw error
+      }
+    },
+
+    async updateArticle(id, updatedData) {
+      try {
+        const updated = await api.admin.updateArticle(id, updatedData)
+        const index = this.articles.findIndex(article => article.id === parseInt(id))
+        if (index !== -1) {
+          this.articles[index] = updated
         }
-        return this.articles[index]
+        return updated
+      } catch (error) {
+        console.error('記事の更新に失敗しました:', error)
+        throw error
       }
-      return null
     },
 
-    deleteArticle(id) {
-      const index = this.articles.findIndex(article => article.id === parseInt(id))
-      if (index !== -1) {
-        this.articles.splice(index, 1)
+    async deleteArticle(id) {
+      try {
+        await api.admin.deleteArticle(id)
+        const index = this.articles.findIndex(article => article.id === parseInt(id))
+        if (index !== -1) {
+          this.articles.splice(index, 1)
+        }
         return true
+      } catch (error) {
+        console.error('記事の削除に失敗しました:', error)
+        throw error
       }
-      return false
     },
 
-    bulkDeleteArticles(ids) {
-      const idsToDelete = ids.map(id => parseInt(id))
-      this.articles = this.articles.filter(article => !idsToDelete.includes(article.id))
-      return true
+    async bulkDeleteArticles(ids) {
+      try {
+        await api.admin.bulkDeleteArticles(ids)
+        const idsToDelete = ids.map(id => parseInt(id))
+        this.articles = this.articles.filter(article => !idsToDelete.includes(article.id))
+        return true
+      } catch (error) {
+        console.error('記事の一括削除に失敗しました:', error)
+        throw error
+      }
     },
 
-    bulkUpdateStatus(ids, status) {
-      const idsToUpdate = ids.map(id => parseInt(id))
-      this.articles.forEach(article => {
-        if (idsToUpdate.includes(article.id)) {
-          article.status = status
-        }
-      })
-      return true
+    async bulkUpdateStatus(ids, status) {
+      try {
+        await api.admin.bulkUpdateArticleStatus(ids, status)
+        const idsToUpdate = ids.map(id => parseInt(id))
+        this.articles.forEach(article => {
+          if (idsToUpdate.includes(article.id)) {
+            article.status = status
+          }
+        })
+        return true
+      } catch (error) {
+        console.error('記事のステータス一括更新に失敗しました:', error)
+        throw error
+      }
     }
   }
 })

@@ -242,6 +242,7 @@
 
 <script>
 import { useAdminStore } from '@/store/admin'
+import api from '@/services/api'
 
 export default {
   name: 'AccountManagement',
@@ -459,14 +460,20 @@ export default {
         this.deleteAccount(account.id)
       }
     },
-    deleteAccount(id) {
-      const index = this.accounts.findIndex(a => a.id === id)
-      if (index > -1) {
-        this.accounts.splice(index, 1)
-        this.allAccounts = [...this.accounts]
-        this.selectedIds = this.selectedIds.filter(selectedId => selectedId !== id)
-        this.loadAllAccounts()
-        alert('アカウントを削除しました')
+    async deleteAccount(id) {
+      try {
+        await api.admin.deleteAccount(id)
+        const index = this.accounts.findIndex(a => a.id === id)
+        if (index > -1) {
+          this.accounts.splice(index, 1)
+          this.allAccounts = [...this.accounts]
+          this.selectedIds = this.selectedIds.filter(selectedId => selectedId !== id)
+          this.loadAllAccounts()
+          alert('アカウントを削除しました')
+        }
+      } catch (error) {
+        console.error('Delete account error:', error)
+        alert('アカウントの削除に失敗しました')
       }
     },
     toggleSelect(id) {
@@ -484,13 +491,21 @@ export default {
         this.selectedIds = this.filteredAccounts.map(account => account.id)
       }
     },
-    confirmBulkDelete() {
+    async confirmBulkDelete() {
       if (confirm(`選択した${this.selectedIds.length}件のアカウントを削除しますか？\nこの操作は取り消せません。`)) {
-        this.accounts = this.accounts.filter(a => !this.selectedIds.includes(a.id))
-        this.allAccounts = [...this.accounts]
-        alert('アカウントを削除しました')
-        this.selectedIds = []
-        this.loadAllAccounts()
+        try {
+          for (const id of this.selectedIds) {
+            await api.admin.deleteAccount(id)
+          }
+          this.accounts = this.accounts.filter(a => !this.selectedIds.includes(a.id))
+          this.allAccounts = [...this.accounts]
+          alert('アカウントを削除しました')
+          this.selectedIds = []
+          this.loadAllAccounts()
+        } catch (error) {
+          console.error('Bulk delete error:', error)
+          alert('アカウントの削除に失敗しました')
+        }
       }
     },
     handleLogout() {
@@ -499,65 +514,21 @@ export default {
         this.$router.push('/admin/login')
       }
     },
-    loadAccounts() {
-      // ダミーデータ（実際はAPIから取得）
-      this.accounts = [
-        {
-          id: 1,
-          companyId: 'COMP001',
-          companyName: '株式会社マルエツ',
-          storeId: 'STORE001',
-          storeName: 'マルエツ赤坂店',
-          accountId: 'admin',
-          password: 'password'
-        },
-        {
-          id: 2,
-          companyId: 'COMP001',
-          companyName: '株式会社マルエツ',
-          storeId: 'STORE002',
-          storeName: 'マルエツ浦和店',
-          accountId: 'company',
-          password: 'password'
-        },
-        {
-          id: 3,
-          companyId: 'COMP001',
-          companyName: '株式会社マルエツ',
-          storeId: 'STORE001',
-          storeName: 'マルエツ赤坂店',
-          accountId: 'store',
-          password: 'password'
-        },
-        {
-          id: 4,
-          companyId: 'COMP002',
-          companyName: '株式会社ライフコーポレーション',
-          storeId: 'STORE003',
-          storeName: 'ライフ品川店',
-          accountId: 'life_shinagawa',
-          password: 'password'
-        },
-        {
-          id: 5,
-          companyId: 'COMP002',
-          companyName: '株式会社ライフコーポレーション',
-          storeId: 'STORE004',
-          storeName: 'ライフ梅田店',
-          accountId: 'life_umeda',
-          password: 'password'
-        },
-        {
-          id: 6,
-          companyId: 'COMP003',
-          companyName: '株式会社イオンリテール',
-          storeId: 'STORE005',
-          storeName: 'イオン幕張新都心店',
-          accountId: 'aeon_makuhari',
-          password: 'password'
-        }
-      ]
-      this.allAccounts = [...this.accounts]
+    async loadAccounts() {
+      this.loading = true
+      try {
+        const params = {}
+        const response = await api.admin.getAccounts(params)
+        this.accounts = response.accounts || []
+        this.allAccounts = [...this.accounts]
+      } catch (error) {
+        console.error('Load accounts error:', error)
+        alert('アカウント一覧の取得に失敗しました')
+        this.accounts = []
+        this.allAccounts = []
+      } finally {
+        this.loading = false
+      }
     }
   },
   mounted() {

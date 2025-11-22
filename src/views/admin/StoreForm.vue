@@ -207,6 +207,7 @@
 
 <script>
 import { useAdminStore } from '@/store/admin'
+import api from '@/services/api'
 
 export default {
   name: 'StoreForm',
@@ -248,12 +249,19 @@ export default {
       this.errorMessage = ''
 
       try {
-        // 実際はAPIでデータを送信
-        await new Promise(resolve => setTimeout(resolve, 500))
+        const storeData = {
+          name: this.form.name,
+          address: this.form.address,
+          phone: this.form.phone,
+          businessHours: this.form.businessHours,
+          status: this.form.status
+        }
 
         if (this.isEditMode) {
+          await api.admin.updateStore(this.$route.params.id, storeData)
           alert('店舗情報を更新しました')
         } else {
+          await api.admin.createStore(storeData)
           alert('店舗を登録しました')
         }
         this.$router.push('/admin/stores')
@@ -265,28 +273,32 @@ export default {
         this.showConfirmModal = false
       }
     },
-    loadStore() {
+    async loadStore() {
       if (this.isEditMode) {
-        // 実際はAPIから店舗データを取得
-        // ダミーデータ
-        const dummyStore = {
-          id: this.$route.params.id,
-          companyId: 'COMP001',
-          storeId: 'STORE001',
-          name: 'イオン大宮店',
-          address: '埼玉県さいたま市大宮区桜木町2-3',
-          phone: '048-123-4567',
-          businessHours: '9:00-21:00',
-          status: 'active'
-        }
+        this.loading = true
+        try {
+          const response = await api.admin.getStores({ id: this.$route.params.id })
+          const store = response.stores && response.stores.length > 0 ? response.stores[0] : null
 
-        this.form.companyId = dummyStore.companyId
-        this.form.storeId = dummyStore.storeId
-        this.form.name = dummyStore.name
-        this.form.address = dummyStore.address
-        this.form.phone = dummyStore.phone
-        this.form.businessHours = dummyStore.businessHours
-        this.form.status = dummyStore.status
+          if (store) {
+            this.form.companyId = store.companyId
+            this.form.storeId = store.storeId
+            this.form.name = store.name
+            this.form.address = store.address
+            this.form.phone = store.phone
+            this.form.businessHours = store.businessHours
+            this.form.status = store.status
+          } else {
+            alert('店舗が見つかりませんでした')
+            this.$router.push('/admin/stores')
+          }
+        } catch (error) {
+          console.error('Load store error:', error)
+          alert('店舗データの取得に失敗しました')
+          this.$router.push('/admin/stores')
+        } finally {
+          this.loading = false
+        }
       } else {
         // 新規作成時は企業IDと店舗IDを空にする
         this.form.companyId = ''
