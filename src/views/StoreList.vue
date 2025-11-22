@@ -115,6 +115,7 @@
 
 <script>
 import FlyerModal from '@/components/FlyerModal.vue'
+import api from '@/services/api'
 
 export default {
   name: 'StoreList',
@@ -183,106 +184,26 @@ export default {
     this.loadStores()
   },
   methods: {
-    loadStores() {
-      // ダミーデータ（実際はAPIから取得）
-      this.stores = [
-        {
-          id: 1,
-          name: 'イオン大宮店',
-          logo: 'https://via.placeholder.com/150x100?text=AEON',
-          region: '関東',
-          prefecture: '埼玉県',
-          salePeriod: '11/15 - 11/21',
-          postalCode: '〒330-0846',
-          address: '埼玉県さいたま市大宮区大門町2-90',
-          phone: '048-645-7700',
-          flyerImages: [
-            'https://via.placeholder.com/800x1000?text=AEON+Flyer+1',
-            'https://via.placeholder.com/800x1000?text=AEON+Flyer+2',
-            'https://via.placeholder.com/800x1000?text=AEON+Flyer+3'
-          ]
-        },
-        {
-          id: 2,
-          name: 'マルエツ浦和店',
-          logo: 'https://via.placeholder.com/150x100?text=Maruetsu',
-          region: '関東',
-          prefecture: '埼玉県',
-          salePeriod: '11/16 - 11/22',
-          postalCode: '〒330-0063',
-          address: '埼玉県さいたま市浦和区高砂2-6-18',
-          phone: '048-824-3111',
-          flyerImages: [
-            'https://via.placeholder.com/800x1000?text=Maruetsu+Flyer+1',
-            'https://via.placeholder.com/800x1000?text=Maruetsu+Flyer+2'
-          ]
-        },
-        {
-          id: 3,
-          name: 'ライフ品川店',
-          logo: 'https://via.placeholder.com/150x100?text=LIFE',
-          region: '関東',
-          prefecture: '東京都',
-          salePeriod: '11/17 - 11/23',
-          postalCode: '〒108-0075',
-          address: '東京都港区港南2-3-13',
-          phone: '03-5460-1711',
-          flyerImages: [
-            'https://via.placeholder.com/800x1000?text=LIFE+Flyer+1',
-            'https://via.placeholder.com/800x1000?text=LIFE+Flyer+2',
-            'https://via.placeholder.com/800x1000?text=LIFE+Flyer+3',
-            'https://via.placeholder.com/800x1000?text=LIFE+Flyer+4'
-          ]
-        },
-        {
-          id: 4,
-          name: 'サミット渋谷店',
-          logo: 'https://via.placeholder.com/150x100?text=Summit',
-          region: '関東',
-          prefecture: '東京都',
-          salePeriod: '11/18 - 11/24',
-          postalCode: '〒150-0002',
-          address: '東京都渋谷区渋谷1-12-8',
-          phone: '03-3797-3200',
-          flyerImages: [
-            'https://via.placeholder.com/800x1000?text=Summit+Flyer+1'
-          ]
-        },
-        {
-          id: 5,
-          name: 'オーケー川崎店',
-          logo: 'https://via.placeholder.com/150x100?text=OK',
-          region: '関東',
-          prefecture: '神奈川県',
-          salePeriod: '11/19 - 11/25',
-          postalCode: '〒210-0007',
-          address: '神奈川県川崎市川崎区駅前本町8',
-          phone: '044-245-5511',
-          flyerImages: [
-            'https://via.placeholder.com/800x1000?text=OK+Flyer+1',
-            'https://via.placeholder.com/800x1000?text=OK+Flyer+2',
-            'https://via.placeholder.com/800x1000?text=OK+Flyer+3',
-            'https://via.placeholder.com/800x1000?text=OK+Flyer+4',
-            'https://via.placeholder.com/800x1000?text=OK+Flyer+5'
-          ]
-        },
-        {
-          id: 6,
-          name: 'イトーヨーカドー新宿店',
-          logo: 'https://via.placeholder.com/150x100?text=Ito+Yokado',
-          region: '関東',
-          prefecture: '東京都',
-          salePeriod: '11/20 - 11/26',
-          postalCode: '〒160-0022',
-          address: '東京都新宿区新宿3-15-15',
-          phone: '03-3352-1111',
-          flyerImages: [
-            'https://via.placeholder.com/800x1000?text=Ito+Yokado+Flyer+1',
-            'https://via.placeholder.com/800x1000?text=Ito+Yokado+Flyer+2'
-          ]
-        }
-      ]
-      this.loading = false
+    async loadStores() {
+      try {
+        this.loading = true
+        this.error = null
+
+        const params = {}
+        if (this.searchQuery) params.q = this.searchQuery
+        if (this.selectedRegion) params.region = this.selectedRegion
+        if (this.selectedPrefecture) params.prefecture = this.selectedPrefecture
+        if (this.$route.query.address) params.address = this.$route.query.address
+
+        const data = await api.getStores(params)
+        this.stores = data
+      } catch (err) {
+        this.error = '店舗情報の取得に失敗しました'
+        console.error('店舗情報の取得に失敗しました:', err)
+        this.stores = []
+      } finally {
+        this.loading = false
+      }
     },
     goToPage(page) {
       this.currentPage = page
@@ -336,36 +257,20 @@ export default {
       this.currentRecipeIndex = index
     },
     async generateRecipes() {
-      // TODO: 後でOpenAI APIを実装
-      this.isLoadingRecipe = true
-      // ダミーデータで3つのレシピを生成
-      await new Promise(resolve => setTimeout(resolve, 1500)) // ローディング演出
-      this.recipes = [
-        {
-          id: 1,
-          title: '豚肉と野菜の炒め物',
-          ingredients: ['豚肉 200g', 'キャベツ 1/4個', 'にんじん 1本', '玉ねぎ 1個', '醤油 大さじ2', 'みりん 大さじ1'],
-          instructions: '1. 野菜を食べやすい大きさに切る\n2. フライパンで豚肉を炒める\n3. 野菜を加えて炒める\n4. 調味料を加えて味を整える',
-          image: 'https://via.placeholder.com/400x300?text=Recipe+1'
-        },
-        {
-          id: 2,
-          title: '鶏肉とブロッコリーのグラタン',
-          ingredients: ['鶏もも肉 250g', 'ブロッコリー 1株', '牛乳 300ml', 'チーズ 100g', '小麦粉 大さじ2', 'バター 30g'],
-          instructions: '1. 鶏肉とブロッコリーを茹でる\n2. ホワイトソースを作る\n3. 耐熱皿に材料を入れる\n4. チーズをのせてオーブンで焼く',
-          image: 'https://via.placeholder.com/400x300?text=Recipe+2'
-        },
-        {
-          id: 3,
-          title: 'サーモンのムニエル',
-          ingredients: ['サーモン 2切れ', 'バター 20g', 'レモン 1個', '塩 少々', 'こしょう 少々', '小麦粉 適量'],
-          instructions: '1. サーモンに塩こしょうをふる\n2. 小麦粉をまぶす\n3. フライパンでバターを溶かす\n4. サーモンを両面焼く\n5. レモンを絞って完成',
-          image: 'https://via.placeholder.com/400x300?text=Recipe+3'
-        }
-      ]
-      this.isLoadingRecipe = false
-      this.activeTab = 'recipe'
-      this.currentRecipeIndex = 0
+      if (!this.selectedStore?.id) return
+
+      try {
+        this.isLoadingRecipe = true
+        const data = await api.generateRecipe(this.selectedStore.id)
+        this.recipes = data.recipes || []
+        this.activeTab = 'recipe'
+        this.currentRecipeIndex = 0
+      } catch (err) {
+        console.error('レシピ生成に失敗しました:', err)
+        this.recipes = []
+      } finally {
+        this.isLoadingRecipe = false
+      }
     },
     shareToSNS(platform) {
       if (this.recipes.length === 0) return

@@ -294,6 +294,7 @@
 
 <script>
 import { useAdminStore } from '@/store/admin'
+import api from '@/services/api'
 
 export default {
   name: 'FlyerForm',
@@ -354,39 +355,33 @@ export default {
     toggleFlyerInfoSection() {
       this.flyerInfoExpanded = !this.flyerInfoExpanded
     },
-    loadFlyer(id) {
-      // 実際のAPIからデータを取得する場合はここで実装
-      // ダミーデータで初期化
-      const dummyFlyer = {
-        id: id,
-        companyId: 'COMP001',
-        storeId: 'STORE001',
-        companyName: '株式会社ABC商事',
-        storeName: 'スーパーマーケット ABC',
-        address: '東京都渋谷区渋谷1-1-1',
-        title: '週末限定セール',
-        images: [
-          { preview: 'https://via.placeholder.com/300x200?text=Flyer+1' },
-          { preview: 'https://via.placeholder.com/300x200?text=Flyer+2' }
-        ],
-        periodFrom: '2024-01-15',
-        periodTo: '2024-01-21',
-        category: 'food',
-        status: 'active'
-      }
+    async loadFlyer(id) {
+      try {
+        const response = await api.admin.getFlyers({ id: id })
+        const flyer = response.flyers && response.flyers.length > 0 ? response.flyers[0] : null
 
-      this.form = {
-        companyId: dummyFlyer.companyId,
-        storeId: dummyFlyer.storeId,
-        companyName: dummyFlyer.companyName,
-        storeName: dummyFlyer.storeName,
-        address: dummyFlyer.address,
-        title: dummyFlyer.title,
-        images: dummyFlyer.images,
-        periodFrom: dummyFlyer.periodFrom,
-        periodTo: dummyFlyer.periodTo,
-        category: dummyFlyer.category,
-        status: dummyFlyer.status
+        if (flyer) {
+          this.form = {
+            companyId: flyer.companyId,
+            storeId: flyer.storeId,
+            companyName: flyer.companyName,
+            storeName: flyer.storeName,
+            address: flyer.address,
+            title: flyer.title,
+            images: flyer.images || [],
+            periodFrom: flyer.periodFrom,
+            periodTo: flyer.periodTo,
+            category: flyer.category,
+            status: flyer.status
+          }
+        } else {
+          alert('チラシが見つかりませんでした')
+          this.$router.push('/admin/flyers')
+        }
+      } catch (error) {
+        console.error('Load flyer error:', error)
+        alert('チラシデータの取得に失敗しました')
+        this.$router.push('/admin/flyers')
       }
     },
     handleFileChange(event) {
@@ -456,12 +451,34 @@ export default {
     closeModal() {
       this.showModal = false
     },
-    submitForm() {
-      // 実際のAPI呼び出しはここで実装
-      console.log('Submitting flyer:', this.form)
+    async submitForm() {
+      try {
+        const formData = new FormData()
+        formData.append('title', this.form.title)
+        formData.append('periodFrom', this.form.periodFrom)
+        formData.append('periodTo', this.form.periodTo)
+        formData.append('category', this.form.category)
+        formData.append('status', this.form.status)
 
-      alert(this.isEditMode ? 'チラシを更新しました' : 'チラシを登録しました')
-      this.$router.push('/admin/flyers')
+        // 画像を追加
+        this.form.images.forEach((image, index) => {
+          if (image.file) {
+            formData.append('images', image.file)
+          }
+        })
+
+        if (this.isEditMode) {
+          await api.admin.updateFlyer(this.$route.params.id, formData)
+          alert('チラシを更新しました')
+        } else {
+          await api.admin.createFlyer(formData)
+          alert('チラシを登録しました')
+        }
+        this.$router.push('/admin/flyers')
+      } catch (error) {
+        console.error('Submit flyer error:', error)
+        alert('チラシの保存に失敗しました')
+      }
     },
     formatDate(dateString) {
       if (!dateString) return ''

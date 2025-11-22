@@ -253,6 +253,7 @@
 
 <script>
 import { useAdminStore } from '@/store/admin'
+import api from '@/services/api'
 
 export default {
   name: 'CompanyForm',
@@ -309,12 +310,23 @@ export default {
       this.errorMessage = ''
 
       try {
-        // 実際はAPIでデータを送信
-        await new Promise(resolve => setTimeout(resolve, 500))
+        const companyData = {
+          name: this.form.name,
+          address: this.form.address,
+          contactName: this.form.contactName,
+          phone: this.form.phone,
+          email: this.form.email,
+          contractStatus: this.form.contractStatus,
+          contractPlan: this.form.contractPlan,
+          contractStartDate: this.form.contractStartDate,
+          contractEndDate: this.form.contractEndDate
+        }
 
         if (this.isEditMode) {
+          await api.admin.updateCompany(this.$route.params.id, companyData)
           alert('企業情報を更新しました')
         } else {
+          await api.admin.createCompany(companyData)
           alert('企業を登録しました')
         }
         this.$router.push('/admin/companies')
@@ -351,34 +363,35 @@ export default {
         day: '2-digit'
       })
     },
-    loadCompany() {
+    async loadCompany() {
       if (this.isEditMode) {
-        // 実際はAPIから企業データを取得
-        // ダミーデータ
-        const dummyCompany = {
-          id: this.$route.params.id,
-          companyId: 'COMP001',
-          name: '株式会社サンプル商事',
-          address: '東京都千代田区丸の内1-1-1',
-          contactName: '山田太郎',
-          phone: '03-1234-5678',
-          email: 'yamada@sample.co.jp',
-          contractStatus: 'active',
-          contractPlan: 'premium',
-          contractStartDate: '2024-01-01',
-          contractEndDate: '2025-12-31'
-        }
+        this.loading = true
+        try {
+          const response = await api.admin.getCompanies({ id: this.$route.params.id })
+          const company = response.companies && response.companies.length > 0 ? response.companies[0] : null
 
-        this.form.companyId = dummyCompany.companyId
-        this.form.name = dummyCompany.name
-        this.form.address = dummyCompany.address
-        this.form.contactName = dummyCompany.contactName
-        this.form.phone = dummyCompany.phone
-        this.form.email = dummyCompany.email
-        this.form.contractStatus = dummyCompany.contractStatus
-        this.form.contractPlan = dummyCompany.contractPlan
-        this.form.contractStartDate = dummyCompany.contractStartDate
-        this.form.contractEndDate = dummyCompany.contractEndDate
+          if (company) {
+            this.form.companyId = company.companyId
+            this.form.name = company.name
+            this.form.address = company.address
+            this.form.contactName = company.contactName
+            this.form.phone = company.phone
+            this.form.email = company.email
+            this.form.contractStatus = company.contractStatus
+            this.form.contractPlan = company.contractPlan
+            this.form.contractStartDate = company.contractStartDate
+            this.form.contractEndDate = company.contractEndDate
+          } else {
+            alert('企業が見つかりませんでした')
+            this.$router.push('/admin/companies')
+          }
+        } catch (error) {
+          console.error('Load company error:', error)
+          alert('企業データの取得に失敗しました')
+          this.$router.push('/admin/companies')
+        } finally {
+          this.loading = false
+        }
       } else {
         // 新規作成時は企業IDを空にする
         this.form.companyId = ''

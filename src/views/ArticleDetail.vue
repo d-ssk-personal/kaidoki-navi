@@ -83,7 +83,7 @@
 </template>
 
 <script>
-import { getArticleById } from '@/data/articles'
+import api from '@/services/api'
 
 export default {
   name: 'ArticleDetail',
@@ -115,15 +115,17 @@ export default {
     window.scrollTo(0, 0)
   },
   methods: {
-    loadArticle() {
-      this.loading = true
-      const articleId = this.$route.params.id
-
-      // モックデータから記事を取得
-      setTimeout(() => {
-        this.article = getArticleById(articleId)
+    async loadArticle() {
+      try {
+        this.loading = true
+        const articleId = this.$route.params.id
+        this.article = await api.getArticleById(articleId)
+      } catch (error) {
+        console.error('記事の取得に失敗しました:', error)
+        this.article = null
+      } finally {
         this.loading = false
-      }, 300) // ローディングをシミュレート
+      }
     },
     goBack() {
       this.$router.push('/top')
